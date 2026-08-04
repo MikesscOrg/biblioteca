@@ -19,6 +19,46 @@ body {
   min-width: 320px;
 }
 
-#root {
-  min-height: 100vh;
+* {
+  box-sizing: border-box;
 }
+
+/* Fuente elegante para el nombre del sitio */
+.elegant {
+  font-family: 'Playfair Display', serif;
+}
+
+/* Header menu dropdown adjustments */
+.menu-dropdown {
+  min-width: 12rem;
+}
+
+@media (min-width: 768px) {
+  .header-search-mobile { display: none; }
+}
+
+/* Paleta personalizada */
+:root {
+  --crema: #F5F1E8;
+  --cafe-claro: #D6C6B8;
+  --cafe-oscuro: #6F4E37;
+  --negro-suave: #2D2D2D;
+  --dorado: #B38B59;
+}
+
+.bg-crema { background-color: var(--crema); }
+.bg-cafe-claro { background-color: var(--cafe-claro); }
+.bg-cafe-oscuro { background-color: var(--cafe-oscuro); }
+.text-dorado { color: var(--dorado); }
+.text-negro-suave { color: var(--negro-suave); }
+.border-dorado { border-color: var(--dorado); }
+
+/* Responsive book card */
+.book-cover { height: 220px; object-fit: cover; width: 100%; border-radius: 0.5rem; }
+
+@media (min-width: 768px) {
+  .book-cover { height: 260px; }
+}
+
+.menu-modal-backdrop { background: rgba(0,0,0,0.45); }
+
