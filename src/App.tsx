@@ -152,7 +152,7 @@ function App() {
       );
       setLibroEditandoId(null);
     } else {
-      const nuevoLibro: Libro = {
+      const nuevoLibro: Book = {
         id: crypto.randomUUID(),
         ...form,
       };
@@ -163,7 +163,7 @@ function App() {
     setForm({ titulo: '', autor: '', genero: '', anio: '', estado: 'Disponible' });
   };
 
-  const editarLibro = (libro: Libro) => {
+  const editarLibro = (libro: Book) => {
     setLibroEditandoId(libro.id);
     setForm({
       titulo: libro.titulo,
