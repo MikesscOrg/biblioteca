@@ -49,12 +49,12 @@ export default function BookCard({
         <p>Género: {libro.genero}</p>
         <p>Año: {libro.anio}</p>
       </div>
-      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+      <div className="mt-4 flex flex-wrap gap-2">
         <button
           onClick={() => onToggle(libro.id)}
           className="min-h-[44px] rounded bg-[#6F4E37] px-4 py-3 text-sm text-white"
         >
-          Cambiar estado
+          {libro.estado === 'Disponible' ? 'Marcar como prestado' : 'Marcar como disponible'}
         </button>
         <button
           onClick={() => onEdit(libro)}
