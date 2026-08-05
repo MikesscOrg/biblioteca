@@ -13,8 +13,8 @@ export default function BookCard({
   onDelete,
   onToggle,
 }: {
-  libro: Libro;
-  onEdit: (l: Libro) => void;
+  libro: Book;
+  onEdit: (l: Book) => void;
   onDelete: (id: string) => void;
   onToggle: (id: string) => void;
 }) {
