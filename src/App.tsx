@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import Carousel from './components/Carousel';
 import BookCard from './components/BookCard';
 import type { Book } from './models/Book';
+import Footer from './components/Footer';
+import Header from './components/Header';
 
 const librosIniciales: Book[] = [
   { id: '1', titulo: 'Don Quijote de la Mancha', autor: 'Miguel de Cervantes', genero: 'Novela', anio: '1605', estado: 'Disponible' },
@@ -209,60 +211,10 @@ function App() {
   const featuredBooks = libros.slice(0, 5).map((l) => ({ title: l.titulo, author: l.autor }));
 
   return (
-    <div className="min-h-screen bg-crema text-negro-suave">
-      <header className="bg-cafe-oscuro text-dorado px-6 py-6 shadow relative">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
-          <div className="flex items-center gap-6">
-            <div>
-              <p className="text-sm uppercase tracking-[0.3em] elegant">Biblioteca</p>
-            </div>
-            <div className="hidden md:block">
-              <input
-                value={busqueda}
-                onChange={(e) => setBusqueda(e.target.value)}
-                placeholder="Buscar título o autor"
-                className="rounded px-3 py-2 text-negro-suave bg-cafe-claro"
-              />
-            </div>
-          </div>
+    <div className="min-h-screen flex flex-col bg-crema text-negro-suave">
+      <Header />
 
-          <div className="flex items-center gap-4">
-            <div className="rounded-lg bg-cafe-claro px-4 py-2 text-sm text-dorado">
-              <span className="font-semibold">Total:</span> {libros.length}
-            </div>
-
-            <div>
-              <button
-                onClick={() => setMenuOpen((s) => !s)}
-                className="rounded bg-black/10 px-3 py-2 text-sm"
-              >
-                ☰ Menu
-              </button>
-            </div>
-          </div>
-        </div>
-        <div className="md:hidden px-6 mt-3 header-search-mobile">
-          <input
-            value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
-            placeholder="Buscar título o autor"
-            className="w-full rounded px-3 py-2 text-negro-suave bg-cafe-claro"
-          />
-        </div>
-        {menuOpen && (
-          <div className="fixed inset-0 z-50 flex items-start justify-center menu-modal">
-            <div className="absolute inset-0 menu-modal-backdrop" onClick={() => setMenuOpen(false)} />
-            <div className="relative mt-20 w-80 rounded bg-white text-negro-suave p-4 shadow">
-              <button className="block w-full text-left px-3 py-2 hover:bg-crema" onClick={() => {}}>Cuenta</button>
-              <button className="block w-full text-left px-3 py-2 hover:bg-crema" onClick={() => {}}>Membresía</button>
-              <button className="block w-full text-left px-3 py-2 hover:bg-crema" onClick={() => {}}>Ayuda</button>
-              <button className="block w-full text-left px-3 py-2 hover:bg-crema" onClick={() => {}}>Cuáles libros alquilo</button>
-            </div>
-          </div>
-        )}
-      </header>
-
-      <main className="mx-auto max-w-6xl px-6 py-8">
+      <main className="flex-1 mx-auto max-w-6xl px-6 py-8">
         <div className="mb-8">
           <Carousel items={featuredBooks} />
         </div>
@@ -353,6 +305,8 @@ function App() {
           ))}
         </section>
       </main>
+
+      <Footer />
     </div>
   );
 }
