@@ -189,7 +189,9 @@ function App() {
   };
 
   const eliminarLibro = (id: string) => {
-    const confirmar = window.confirm('¿Deseas eliminar este libro?');
+    const confirmar = window.confirm(
+      '¿Estás seguro de eliminar este libro? Esta acción no se puede deshacer.'
+    );
     if (!confirmar) return;
     setLibros((prev) => prev.filter((libro) => libro.id !== id));
   };
