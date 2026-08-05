@@ -1,17 +1,9 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useMemo, useState, type FormEvent } from 'react';
 import Carousel from './components/Carousel';
 import BookCard from './components/BookCard';
+import type { Book } from './models/Book';
 
-type Libro = {
-  id: string;
-  titulo: string;
-  autor: string;
-  genero: string;
-  anio: string;
-  estado: 'Disponible' | 'Prestado';
-};
-
-const librosIniciales: Libro[] = [
+const librosIniciales: Book[] = [
   { id: '1', titulo: 'Don Quijote de la Mancha', autor: 'Miguel de Cervantes', genero: 'Novela', anio: '1605', estado: 'Disponible' },
   { id: '2', titulo: 'Cien años de soledad', autor: 'Gabriel García Márquez', genero: 'Realismo mágico', anio: '1967', estado: 'Disponible' },
   { id: '3', titulo: 'El principito', autor: 'Antoine de Saint-Exupéry', genero: 'Fábula', anio: '1943', estado: 'Disponible' },
@@ -114,15 +106,10 @@ const librosIniciales: Libro[] = [
   { id: '100', titulo: 'Canción de hielo y fuego: Juego de tronos', autor: 'George R. R. Martin', genero: 'Fantasía', anio: '1996', estado: 'Disponible' },
 ];
 
-const STORAGE_KEY = 'biblioteca-libros';
-
 function App() {
-  const [libros, setLibros] = useState<Libro[]>(() => {
-    const datos = localStorage.getItem(STORAGE_KEY);
-    return datos ? (JSON.parse(datos) as Libro[]) : librosIniciales;
-  });
+  const [libros, setLibros] = useState<Book[]>(librosIniciales);
   const [busqueda, setBusqueda] = useState('');
-  const [form, setForm] = useState<Omit<Libro, 'id'>>({
+  const [form, setForm] = useState<Omit<Book, 'id'>>({
     titulo: '',
     autor: '',
     genero: '',
@@ -134,10 +121,6 @@ function App() {
   const [filtroAutor, setFiltroAutor] = useState('');
   const [filtroGenero, setFiltroGenero] = useState('');
   const [filtroAnio, setFiltroAnio] = useState('');
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(libros));
-  }, [libros]);
 
   const librosFiltrados = useMemo(() => {
     const texto = busqueda.toLowerCase();
