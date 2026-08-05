@@ -1,19 +1,11 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useMemo, useState, type FormEvent } from 'react';
 import Carousel from './components/Carousel';
 import BookCard from './components/BookCard';
 import Footer from './components/Footer';
 import Header from './components/Header';
+import type { Book } from './models/Book';
 
-type Libro = {
-  id: string;
-  titulo: string;
-  autor: string;
-  genero: string;
-  anio: string;
-  estado: 'Disponible' | 'Prestado';
-};
-
-const librosIniciales: Libro[] = [
+const librosIniciales: Book[] = [
   { id: '1', titulo: 'Don Quijote de la Mancha', autor: 'Miguel de Cervantes', genero: 'Novela', anio: '1605', estado: 'Disponible' },
   { id: '2', titulo: 'Cien años de soledad', autor: 'Gabriel García Márquez', genero: 'Realismo mágico', anio: '1967', estado: 'Disponible' },
   { id: '3', titulo: 'El principito', autor: 'Antoine de Saint-Exupéry', genero: 'Fábula', anio: '1943', estado: 'Disponible' },
@@ -116,15 +108,10 @@ const librosIniciales: Libro[] = [
   { id: '100', titulo: 'Canción de hielo y fuego: Juego de tronos', autor: 'George R. R. Martin', genero: 'Fantasía', anio: '1996', estado: 'Disponible' },
 ];
 
-const STORAGE_KEY = 'biblioteca-libros';
-
 function App() {
-  const [libros, setLibros] = useState<Libro[]>(() => {
-    const datos = localStorage.getItem(STORAGE_KEY);
-    return datos ? (JSON.parse(datos) as Libro[]) : librosIniciales;
-  });
+  const [libros, setLibros] = useState<Book[]>(librosIniciales);
   const [busqueda, setBusqueda] = useState('');
-  const [form, setForm] = useState<Omit<Libro, 'id'>>({
+  const [form, setForm] = useState<Omit<Book, 'id'>>({
     titulo: '',
     autor: '',
     genero: '',
@@ -132,14 +119,9 @@ function App() {
     estado: 'Disponible',
   });
   const [libroEditandoId, setLibroEditandoId] = useState<string | null>(null);
-  const [menuOpen, setMenuOpen] = useState(false);
   const [filtroAutor, setFiltroAutor] = useState('');
   const [filtroGenero, setFiltroGenero] = useState('');
   const [filtroAnio, setFiltroAnio] = useState('');
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(libros));
-  }, [libros]);
 
   const librosFiltrados = useMemo(() => {
     const texto = busqueda.toLowerCase();
@@ -171,7 +153,7 @@ function App() {
       );
       setLibroEditandoId(null);
     } else {
-      const nuevoLibro: Libro = {
+      const nuevoLibro: Book = {
         id: crypto.randomUUID(),
         ...form,
       };
@@ -182,7 +164,7 @@ function App() {
     setForm({ titulo: '', autor: '', genero: '', anio: '', estado: 'Disponible' });
   };
 
-  const editarLibro = (libro: Libro) => {
+  const editarLibro = (libro: Book) => {
     setLibroEditandoId(libro.id);
     setForm({
       titulo: libro.titulo,
@@ -220,7 +202,11 @@ function App() {
 
   return (
     <div className="min-h-screen flex flex-col bg-crema text-negro-suave">
-      <Header />
+      <Header
+        busqueda={busqueda}
+        onBusquedaChange={setBusqueda}
+        onLimpiarBusqueda={() => setBusqueda('')}
+      />
 
       <main className="flex-1 mx-auto max-w-6xl px-6 py-8">
         <div className="mb-8">
@@ -301,16 +287,24 @@ function App() {
             </select>
           </div>
         </section>
-        <section className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {librosFiltrados.map((libro) => (
-            <BookCard
-              key={libro.id}
-              libro={libro}
-              onEdit={editarLibro}
-              onDelete={eliminarLibro}
-              onToggle={cambiarEstado}
-            />
-          ))}
+        <section className="mt-8">
+          {librosFiltrados.length === 0 ? (
+            <div className="rounded-2xl bg-white p-6 text-center text-slate-600 shadow">
+              No se encontraron libros que coincidan con la búsqueda.
+            </div>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {librosFiltrados.map((libro) => (
+                <BookCard
+                  key={libro.id}
+                  libro={libro}
+                  onEdit={editarLibro}
+                  onDelete={eliminarLibro}
+                  onToggle={cambiarEstado}
+                />
+              ))}
+            </div>
+          )}
         </section>
       </main>
 

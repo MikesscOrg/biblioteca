@@ -1,14 +1,6 @@
 import { useEffect, useState } from 'react';
 import { fetchCoverUrl } from '../utils/getCover';
-
-type Libro = {
-  id: string;
-  titulo: string;
-  autor: string;
-  genero: string;
-  anio: string;
-  estado: 'Disponible' | 'Prestado';
-};
+import type { Book } from '../models/Book';
 
 export default function BookCard({
   libro,
@@ -16,8 +8,8 @@ export default function BookCard({
   onDelete,
   onToggle,
 }: {
-  libro: Libro;
-  onEdit: (l: Libro) => void;
+  libro: Book;
+  onEdit: (l: Book) => void;
   onDelete: (id: string) => void;
   onToggle: (id: string) => void;
 }) {
