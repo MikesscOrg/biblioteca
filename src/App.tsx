@@ -116,11 +116,41 @@ const librosIniciales: Libro[] = [
 
 const STORAGE_KEY = 'biblioteca-libros';
 
+const isLibro = (item: unknown): item is Libro => {
+  if (typeof item !== 'object' || item === null) return false;
+  const libro = item as Record<string, unknown>;
+
+  return (
+    typeof libro.id === 'string' &&
+    typeof libro.titulo === 'string' &&
+    typeof libro.autor === 'string' &&
+    typeof libro.genero === 'string' &&
+    typeof libro.anio === 'string' &&
+    (libro.estado === 'Disponible' || libro.estado === 'Prestado')
+  );
+};
+
+const cargarLibros = (): Libro[] => {
+  if (typeof window === 'undefined' || !window.localStorage) {
+    return librosIniciales;
+  }
+
+  const datos = localStorage.getItem(STORAGE_KEY);
+  if (!datos) return librosIniciales;
+
+  try {
+    const parsed = JSON.parse(datos);
+    if (!Array.isArray(parsed)) return librosIniciales;
+
+    const librosGuardados = parsed.filter(isLibro);
+    return librosGuardados.length > 0 ? librosGuardados : librosIniciales;
+  } catch {
+    return librosIniciales;
+  }
+};
+
 function App() {
-  const [libros, setLibros] = useState<Libro[]>(() => {
-    const datos = localStorage.getItem(STORAGE_KEY);
-    return datos ? (JSON.parse(datos) as Libro[]) : librosIniciales;
-  });
+  const [libros, setLibros] = useState<Libro[]>(cargarLibros);
   const [busqueda, setBusqueda] = useState('');
   const [form, setForm] = useState<Omit<Libro, 'id'>>({
     titulo: '',
