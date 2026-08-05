@@ -1,14 +1,6 @@
 import { useEffect, useState } from 'react';
 import { fetchCoverUrl } from '../utils/getCover';
-
-type Libro = {
-  id: string;
-  titulo: string;
-  autor: string;
-  genero: string;
-  anio: string;
-  estado: 'Disponible' | 'Prestado';
-};
+import type { Book } from '../models/Book';
 
 export default function BookCard({
   libro,
@@ -16,8 +8,8 @@ export default function BookCard({
   onDelete,
   onToggle,
 }: {
-  libro: Libro;
-  onEdit: (l: Libro) => void;
+  libro: Book;
+  onEdit: (l: Book) => void;
   onDelete: (id: string) => void;
   onToggle: (id: string) => void;
 }) {
@@ -57,14 +49,23 @@ export default function BookCard({
         <p>Género: {libro.genero}</p>
         <p>Año: {libro.anio}</p>
       </div>
-      <div className="mt-4 flex flex-wrap gap-2">
-        <button onClick={() => onToggle(libro.id)} className="rounded bg-[#6F4E37] px-3 py-2 text-sm text-white">
+      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+        <button
+          onClick={() => onToggle(libro.id)}
+          className="min-h-[44px] rounded bg-[#6F4E37] px-4 py-3 text-sm text-white"
+        >
           Cambiar estado
         </button>
-        <button onClick={() => onEdit(libro)} className="rounded bg-[#B38B59] px-3 py-2 text-sm text-white">
+        <button
+          onClick={() => onEdit(libro)}
+          className="min-h-[44px] rounded bg-[#B38B59] px-4 py-3 text-sm text-white"
+        >
           Editar
         </button>
-        <button onClick={() => onDelete(libro.id)} className="rounded bg-rose-600 px-3 py-2 text-sm text-white">
+        <button
+          onClick={() => onDelete(libro.id)}
+          className="min-h-[44px] rounded bg-rose-600 px-4 py-3 text-sm text-white"
+        >
           Eliminar
         </button>
       </div>
