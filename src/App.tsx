@@ -157,6 +157,7 @@ function App() {
   const [filtroAutor, setFiltroAutor] = useState('');
   const [filtroGenero, setFiltroGenero] = useState('');
   const [filtroAnio, setFiltroAnio] = useState('');
+  const [filtroEstado, setFiltroEstado] = useState<'Todos' | 'Disponible' | 'Prestado'>('Todos');
 
   const librosFiltrados = useMemo(() => {
     const texto = busqueda.toLowerCase();
@@ -172,9 +173,10 @@ function App() {
       if (filtroAutor && libro.autor !== filtroAutor) return false;
       if (filtroGenero && libro.genero !== filtroGenero) return false;
       if (filtroAnio && libro.anio !== filtroAnio) return false;
+      if (filtroEstado !== 'Todos' && libro.estado !== filtroEstado) return false;
       return true;
     });
-  }, [libros, busqueda, filtroAutor, filtroGenero, filtroAnio]);
+  }, [libros, busqueda, filtroAutor, filtroGenero, filtroAnio, filtroEstado]);
 
   const agregarLibro = (e: FormEvent) => {
     e.preventDefault();
@@ -315,12 +317,23 @@ function App() {
             <select
               value={filtroAnio}
               onChange={(e) => setFiltroAnio(e.target.value)}
-              className="w-full rounded border border-slate-300 px-3 py-2"
+              className="w-full rounded border border-slate-300 px-3 py-2 mb-4"
             >
               <option value="">Todos</option>
               {anios.map((y) => (
                 <option key={y} value={y}>{y}</option>
               ))}
+            </select>
+
+            <label className="block mb-2 text-sm">Disponibilidad</label>
+            <select
+              value={filtroEstado}
+              onChange={(e) => setFiltroEstado(e.target.value as 'Todos' | 'Disponible' | 'Prestado')}
+              className="w-full rounded border border-slate-300 px-3 py-2"
+            >
+              <option value="Todos">Todos</option>
+              <option value="Disponible">Disponibles</option>
+              <option value="Prestado">Prestados</option>
             </select>
           </div>
         </section>
