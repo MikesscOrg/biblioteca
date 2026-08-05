@@ -1,6 +1,8 @@
 import { useMemo, useState, type FormEvent } from 'react';
 import Carousel from './components/Carousel';
 import BookCard from './components/BookCard';
+import Footer from './components/Footer';
+import Header from './components/Header';
 import type { Book } from './models/Book';
 
 const librosIniciales: Book[] = [
@@ -117,7 +119,6 @@ function App() {
     estado: 'Disponible',
   });
   const [libroEditandoId, setLibroEditandoId] = useState<string | null>(null);
-  const [menuOpen, setMenuOpen] = useState(false);
   const [filtroAutor, setFiltroAutor] = useState('');
   const [filtroGenero, setFiltroGenero] = useState('');
   const [filtroAnio, setFiltroAnio] = useState('');
@@ -201,9 +202,111 @@ function App() {
 
   return (
     <div className="min-h-screen flex flex-col bg-crema text-negro-suave">
-      <Header />
+      <Header
+        busqueda={busqueda}
+        onBusquedaChange={setBusqueda}
+        onLimpiarBusqueda={() => setBusqueda('')}
+      />
 
-      <Catalog />
+      <main className="flex-1 mx-auto max-w-6xl px-6 py-8">
+        <div className="mb-8">
+          <Carousel items={featuredBooks} />
+        </div>
+
+        <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+          <form onSubmit={agregarLibro} className="rounded-2xl bg-white p-6 shadow">
+            <h2 className="mb-4 text-xl font-semibold">
+              {libroEditandoId ? 'Editar libro' : 'Agregar libro'}
+            </h2>
+            <div className="grid gap-4 md:grid-cols-2">
+              <input
+                className="rounded border border-slate-300 px-3 py-2"
+                placeholder="Título"
+                value={form.titulo}
+                onChange={(e) => setForm({ ...form, titulo: e.target.value })}
+              />
+              <input
+                className="rounded border border-slate-300 px-3 py-2"
+                placeholder="Autor"
+                value={form.autor}
+                onChange={(e) => setForm({ ...form, autor: e.target.value })}
+              />
+              <input
+                className="rounded border border-slate-300 px-3 py-2"
+                placeholder="Género"
+                value={form.genero}
+                onChange={(e) => setForm({ ...form, genero: e.target.value })}
+              />
+              <input
+                className="rounded border border-slate-300 px-3 py-2"
+                placeholder="Año"
+                value={form.anio}
+                onChange={(e) => setForm({ ...form, anio: e.target.value })}
+              />
+            </div>
+            <button className="mt-4 rounded bg-slate-900 px-4 py-2 font-medium text-white">
+              {libroEditandoId ? 'Actualizar libro' : 'Guardar libro'}
+            </button>
+          </form>
+          <div className="rounded-2xl bg-white p-6 shadow">
+            <h2 className="mb-4 text-xl font-semibold">Filtros</h2>
+            <label className="block mb-2 text-sm">Autor</label>
+            <select
+              value={filtroAutor}
+              onChange={(e) => setFiltroAutor(e.target.value)}
+              className="w-full rounded border border-slate-300 px-3 py-2 mb-4"
+            >
+              <option value="">Todos</option>
+              {autores.map((a) => (
+                <option key={a} value={a}>{a}</option>
+              ))}
+            </select>
+
+            <label className="block mb-2 text-sm">Género</label>
+            <select
+              value={filtroGenero}
+              onChange={(e) => setFiltroGenero(e.target.value)}
+              className="w-full rounded border border-slate-300 px-3 py-2 mb-4"
+            >
+              <option value="">Todos</option>
+              {generos.map((g) => (
+                <option key={g} value={g}>{g}</option>
+              ))}
+            </select>
+
+            <label className="block mb-2 text-sm">Año</label>
+            <select
+              value={filtroAnio}
+              onChange={(e) => setFiltroAnio(e.target.value)}
+              className="w-full rounded border border-slate-300 px-3 py-2"
+            >
+              <option value="">Todos</option>
+              {anios.map((y) => (
+                <option key={y} value={y}>{y}</option>
+              ))}
+            </select>
+          </div>
+        </section>
+        <section className="mt-8">
+          {librosFiltrados.length === 0 ? (
+            <div className="rounded-2xl bg-white p-6 text-center text-slate-600 shadow">
+              No se encontraron libros que coincidan con la búsqueda.
+            </div>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {librosFiltrados.map((libro) => (
+                <BookCard
+                  key={libro.id}
+                  libro={libro}
+                  onEdit={editarLibro}
+                  onDelete={eliminarLibro}
+                  onToggle={cambiarEstado}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+      </main>
 
       <Footer />
     </div>
