@@ -1,11 +1,4 @@
-type Libro = {
-  id: string;
-  titulo: string;
-  autor: string;
-  genero: string;
-  anio: string;
-  estado: 'Disponible' | 'Prestado';
-};
+import type { Book } from '../models/Book';
 
 export default function BookCard({
   libro,
