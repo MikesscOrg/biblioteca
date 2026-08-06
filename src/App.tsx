@@ -69,6 +69,40 @@ function App() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(libros));
   }, [libros]);
 
+  const autores = useMemo(
+    () =>
+      Array.from(new Set(libros.map((l) => l.autor))).sort((a, b) =>
+        a.localeCompare(b, 'es', { sensitivity: 'base' })
+      ),
+    [libros]
+  );
+  const generos = useMemo(
+    () =>
+      Array.from(new Set(libros.map((l) => l.genero))).sort((a, b) =>
+        a.localeCompare(b, 'es', { sensitivity: 'base' })
+      ),
+    [libros]
+  );
+  const anios = useMemo(
+    () =>
+      Array.from(new Set(libros.map((l) => l.anio))).sort((a, b) =>
+        a.localeCompare(b, 'es', { sensitivity: 'base', numeric: true })
+      ),
+    [libros]
+  );
+
+  // Si el último libro de un autor/género/año se elimina o se edita, el filtro
+  // seleccionado deja de existir en la lista: se ignora y se limpia el estado.
+  const autorActivo = autores.includes(filtroAutor) ? filtroAutor : '';
+  const generoActivo = generos.includes(filtroGenero) ? filtroGenero : '';
+  const anioActivo = anios.includes(filtroAnio) ? filtroAnio : '';
+
+  useEffect(() => {
+    if (filtroAutor !== autorActivo) setFiltroAutor(autorActivo);
+    if (filtroGenero !== generoActivo) setFiltroGenero(generoActivo);
+    if (filtroAnio !== anioActivo) setFiltroAnio(anioActivo);
+  }, [filtroAutor, filtroGenero, filtroAnio, autorActivo, generoActivo, anioActivo]);
+
   const librosFiltrados = useMemo(() => {
     const texto = busqueda.toLowerCase();
     return libros.filter((libro) => {
@@ -80,13 +114,13 @@ function App() {
         )
       )
         return false;
-      if (filtroAutor && libro.autor !== filtroAutor) return false;
-      if (filtroGenero && libro.genero !== filtroGenero) return false;
-      if (filtroAnio && libro.anio !== filtroAnio) return false;
+      if (autorActivo && libro.autor !== autorActivo) return false;
+      if (generoActivo && libro.genero !== generoActivo) return false;
+      if (anioActivo && libro.anio !== anioActivo) return false;
       if (filtroEstado !== 'Todos' && libro.estado !== filtroEstado) return false;
       return true;
     });
-  }, [libros, busqueda, filtroAutor, filtroGenero, filtroAnio, filtroEstado]);
+  }, [libros, busqueda, autorActivo, generoActivo, anioActivo, filtroEstado]);
 
   const agregarLibro = (e: FormEvent) => {
     e.preventDefault();
@@ -155,28 +189,6 @@ function App() {
     if (!confirmar) return;
     setLibros((prev) => prev.filter((libro) => libro.id !== id));
   };
-
-  const autores = useMemo(
-    () =>
-      Array.from(new Set(libros.map((l) => l.autor))).sort((a, b) =>
-        a.localeCompare(b, 'es', { sensitivity: 'base' })
-      ),
-    [libros]
-  );
-  const generos = useMemo(
-    () =>
-      Array.from(new Set(libros.map((l) => l.genero))).sort((a, b) =>
-        a.localeCompare(b, 'es', { sensitivity: 'base' })
-      ),
-    [libros]
-  );
-  const anios = useMemo(
-    () =>
-      Array.from(new Set(libros.map((l) => l.anio))).sort((a, b) =>
-        a.localeCompare(b, 'es', { sensitivity: 'base', numeric: true })
-      ),
-    [libros]
-  );
 
   const featuredBooks = useMemo(
     () => libros.slice(0, 5).map((l) => ({ title: l.titulo, author: l.autor })),
@@ -249,7 +261,7 @@ function App() {
             <h2 className="mb-4 text-xl font-semibold">Filtros</h2>
             <label className="block mb-2 text-sm">Autor</label>
             <select
-              value={filtroAutor}
+              value={autorActivo}
               onChange={(e) => setFiltroAutor(e.target.value)}
               className="w-full rounded border border-slate-300 px-3 py-2 mb-4"
             >
@@ -261,7 +273,7 @@ function App() {
 
             <label className="block mb-2 text-sm">Género</label>
             <select
-              value={filtroGenero}
+              value={generoActivo}
               onChange={(e) => setFiltroGenero(e.target.value)}
               className="w-full rounded border border-slate-300 px-3 py-2 mb-4"
             >
@@ -273,7 +285,7 @@ function App() {
 
             <label className="block mb-2 text-sm">Año</label>
             <select
-              value={filtroAnio}
+              value={anioActivo}
               onChange={(e) => setFiltroAnio(e.target.value)}
               className="w-full rounded border border-slate-300 px-3 py-2 mb-4"
             >
