@@ -62,7 +62,8 @@ export default function Carousel({ items, alt = 'Imagen' }: Props) {
       <div className="absolute left-4 top-1/2 -translate-y-1/2">
         <button
           onClick={() => setIndex((indiceActual - 1 + items.length) % items.length)}
-          className="rounded-full bg-black/40 text-white p-2"
+          className="min-h-[44px] min-w-[44px] rounded-full bg-black/40 p-2 text-white focus:outline-none focus:ring-2 focus:ring-white"
+          aria-label="Mostrar el libro anterior"
         >
           ‹
         </button>
@@ -70,7 +71,8 @@ export default function Carousel({ items, alt = 'Imagen' }: Props) {
       <div className="absolute right-4 top-1/2 -translate-y-1/2">
         <button
           onClick={() => setIndex((indiceActual + 1) % items.length)}
-          className="rounded-full bg-black/40 text-white p-2"
+          className="min-h-[44px] min-w-[44px] rounded-full bg-black/40 p-2 text-white focus:outline-none focus:ring-2 focus:ring-white"
+          aria-label="Mostrar el siguiente libro"
         >
           ›
         </button>
@@ -80,7 +82,8 @@ export default function Carousel({ items, alt = 'Imagen' }: Props) {
           <button
             key={i}
             onClick={() => setIndex(i)}
-            className={`w-2 h-2 rounded-full ${i === indiceActual ? 'bg-white' : 'bg-white/50'}`}
+            className={`h-2 w-2 rounded-full ${i === indiceActual ? 'bg-white' : 'bg-white/50'}`}
+            aria-label={`Ir al libro ${i + 1}`}
           />
         ))}
       </div>
