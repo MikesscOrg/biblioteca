@@ -3,6 +3,7 @@ import Carousel from './components/Carousel';
 import BookCard from './components/BookCard';
 import Footer from './components/Footer';
 import Header from './components/Header';
+import EmptyState from './components/EmptyState';
 import type { Book } from './models/Book';
 import { sampleBooks } from './data/sampleBooks';
 
@@ -195,6 +196,52 @@ function App() {
     [libros]
   );
 
+  const vacioCatalogo = libros.length === 0;
+  const hayBusqueda = busqueda.trim().length > 0;
+  const hayFiltrosActivos = Boolean(autorActivo || generoActivo || anioActivo || filtroEstado !== 'Todos');
+
+  const estadoListado = useMemo(() => {
+    if (vacioCatalogo) {
+      return {
+        title: 'El catálogo aún está vacío',
+        description:
+          'Aún no hay libros registrados. Agrega el primero para empezar a construir tu colección.',
+        actionLabel: 'Agregar libro',
+        onAction: () => {
+          const formulario = document.querySelector('form');
+          formulario?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        },
+      };
+    }
+
+    if (hayBusqueda && librosFiltrados.length === 0) {
+      return {
+        title: 'No hay resultados para tu búsqueda',
+        description:
+          'Prueba con otro término o limpia la búsqueda para ver todos los libros disponibles.',
+        actionLabel: 'Limpiar búsqueda',
+        onAction: () => setBusqueda(''),
+      };
+    }
+
+    if (hayFiltrosActivos && librosFiltrados.length === 0) {
+      return {
+        title: 'No hay libros con esos filtros',
+        description:
+          'Cambia uno o más filtros para ver otros libros o limpia los filtros para volver al catálogo completo.',
+        actionLabel: 'Limpiar filtros',
+        onAction: () => {
+          setFiltroAutor('');
+          setFiltroGenero('');
+          setFiltroAnio('');
+          setFiltroEstado('Todos');
+        },
+      };
+    }
+
+    return null;
+  }, [vacioCatalogo, hayBusqueda, hayFiltrosActivos, librosFiltrados.length]);
+
   return (
     <div className="min-h-screen flex flex-col bg-crema text-negro-suave">
       <Header
@@ -320,10 +367,18 @@ function App() {
           </div>
         </section>
         <section className="mt-8">
-          {librosFiltrados.length === 0 ? (
-            <div className="rounded-2xl bg-white p-6 text-center text-slate-600 shadow">
-              No se encontraron libros que coincidan con la búsqueda.
-            </div>
+          {estadoListado ? (
+            <EmptyState
+              title={estadoListado.title}
+              description={estadoListado.description}
+              actionLabel={estadoListado.actionLabel}
+              onAction={estadoListado.onAction}
+            />
+          ) : librosFiltrados.length === 0 ? (
+            <EmptyState
+              title="No hay libros para mostrar"
+              description="Intenta ajustar la búsqueda o los filtros para encontrar lo que buscas."
+            />
           ) : (
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {librosFiltrados.map((libro) => (
