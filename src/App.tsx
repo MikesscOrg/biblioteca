@@ -214,33 +214,49 @@ function App() {
               {libroEditandoId ? 'Editar libro' : 'Agregar libro'}
             </h2>
             <div className="grid gap-4 md:grid-cols-2">
+              <label className="sr-only" htmlFor="titulo">
+                Título del libro
+              </label>
               <input
-                className="rounded border border-slate-300 px-3 py-2"
+                id="titulo"
+                className="rounded border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-slate-400"
                 placeholder="Título"
                 value={form.titulo}
                 onChange={(e) => setForm({ ...form, titulo: e.target.value })}
               />
+              <label className="sr-only" htmlFor="autor">
+                Autor del libro
+              </label>
               <input
-                className="rounded border border-slate-300 px-3 py-2"
+                id="autor"
+                className="rounded border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-slate-400"
                 placeholder="Autor"
                 value={form.autor}
                 onChange={(e) => setForm({ ...form, autor: e.target.value })}
               />
+              <label className="sr-only" htmlFor="genero">
+                Género del libro
+              </label>
               <input
-                className="rounded border border-slate-300 px-3 py-2"
+                id="genero"
+                className="rounded border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-slate-400"
                 placeholder="Género"
                 value={form.genero}
                 onChange={(e) => setForm({ ...form, genero: e.target.value })}
               />
+              <label className="sr-only" htmlFor="anio">
+                Año de publicación
+              </label>
               <input
-                className="rounded border border-slate-300 px-3 py-2"
+                id="anio"
+                className="rounded border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-slate-400"
                 placeholder="Año"
                 value={form.anio}
                 onChange={(e) => setForm({ ...form, anio: e.target.value })}
               />
             </div>
             <div className="mt-4 flex flex-wrap items-center gap-3">
-              <button className="rounded bg-slate-900 px-4 py-2 font-medium text-white">
+              <button className="rounded bg-slate-900 px-4 py-2 font-medium text-white focus:outline-none focus:ring-2 focus:ring-slate-400">
                 {libroEditandoId ? 'Actualizar libro' : 'Guardar libro'}
               </button>
               {libroEditandoId && (
@@ -250,7 +266,7 @@ function App() {
                     setLibroEditandoId(null);
                     setForm({ titulo: '', autor: '', genero: '', anio: '', estado: 'Disponible' });
                   }}
-                  className="rounded border border-slate-300 bg-white px-4 py-2 text-slate-700 transition hover:bg-slate-50"
+                  className="rounded border border-slate-300 bg-white px-4 py-2 text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-400"
                 >
                   Cancelar
                 </button>
