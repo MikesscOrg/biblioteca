@@ -110,6 +110,46 @@ const librosIniciales: Book[] = [
 
 const STORAGE_KEY = 'biblioteca-libros';
 
+const isBook = (item: unknown): item is Book => {
+  if (typeof item !== 'object' || item === null) return false;
+  const libro = item as Record<string, unknown>;
+
+  return (
+    typeof libro.id === 'string' &&
+    typeof libro.titulo === 'string' &&
+    typeof libro.autor === 'string' &&
+    typeof libro.genero === 'string' &&
+    typeof libro.anio === 'string' &&
+    (libro.estado === 'Disponible' || libro.estado === 'Prestado')
+  );
+};
+
+const cargarLibros = (): Book[] => {
+  if (typeof window === 'undefined' || !window.localStorage) {
+    return sampleBooks;
+  }
+
+  const datos = localStorage.getItem(STORAGE_KEY);
+  if (!datos) return sampleBooks;
+
+  try {
+    const parsed = JSON.parse(datos);
+    if (!Array.isArray(parsed)) return sampleBooks;
+
+    const librosGuardados = parsed.filter(isBook);
+    return librosGuardados.length > 0 ? librosGuardados : sampleBooks;
+  } catch {
+    return sampleBooks;
+  }
+};
+
+const generarId = () => {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return `book-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+};
+
 function App() {
   const [libros, setLibros] = useState<Book[]>(() => {
     const datos = localStorage.getItem(STORAGE_KEY);
@@ -124,14 +164,49 @@ function App() {
     estado: 'Disponible',
   });
   const [libroEditandoId, setLibroEditandoId] = useState<string | null>(null);
-  const [menuOpen, setMenuOpen] = useState(false);
   const [filtroAutor, setFiltroAutor] = useState('');
   const [filtroGenero, setFiltroGenero] = useState('');
   const [filtroAnio, setFiltroAnio] = useState('');
+  const [filtroEstado, setFiltroEstado] = useState<'Todos' | 'Disponible' | 'Prestado'>('Todos');
 
   useEffect(() => {
+    if (typeof window === 'undefined' || !window.localStorage) return;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(libros));
   }, [libros]);
+
+  const autores = useMemo(
+    () =>
+      Array.from(new Set(libros.map((l) => l.autor))).sort((a, b) =>
+        a.localeCompare(b, 'es', { sensitivity: 'base' })
+      ),
+    [libros]
+  );
+  const generos = useMemo(
+    () =>
+      Array.from(new Set(libros.map((l) => l.genero))).sort((a, b) =>
+        a.localeCompare(b, 'es', { sensitivity: 'base' })
+      ),
+    [libros]
+  );
+  const anios = useMemo(
+    () =>
+      Array.from(new Set(libros.map((l) => l.anio))).sort((a, b) =>
+        a.localeCompare(b, 'es', { sensitivity: 'base', numeric: true })
+      ),
+    [libros]
+  );
+
+  // Si el último libro de un autor/género/año se elimina o se edita, el filtro
+  // seleccionado deja de existir en la lista: se ignora y se limpia el estado.
+  const autorActivo = autores.includes(filtroAutor) ? filtroAutor : '';
+  const generoActivo = generos.includes(filtroGenero) ? filtroGenero : '';
+  const anioActivo = anios.includes(filtroAnio) ? filtroAnio : '';
+
+  useEffect(() => {
+    if (filtroAutor !== autorActivo) setFiltroAutor(autorActivo);
+    if (filtroGenero !== generoActivo) setFiltroGenero(generoActivo);
+    if (filtroAnio !== anioActivo) setFiltroAnio(anioActivo);
+  }, [filtroAutor, filtroGenero, filtroAnio, autorActivo, generoActivo, anioActivo]);
 
   const librosFiltrados = useMemo(() => {
     const texto = busqueda.toLowerCase();
@@ -144,28 +219,42 @@ function App() {
         )
       )
         return false;
-      if (filtroAutor && libro.autor !== filtroAutor) return false;
-      if (filtroGenero && libro.genero !== filtroGenero) return false;
-      if (filtroAnio && libro.anio !== filtroAnio) return false;
+      if (autorActivo && libro.autor !== autorActivo) return false;
+      if (generoActivo && libro.genero !== generoActivo) return false;
+      if (anioActivo && libro.anio !== anioActivo) return false;
+      if (filtroEstado !== 'Todos' && libro.estado !== filtroEstado) return false;
       return true;
     });
-  }, [libros, busqueda, filtroAutor, filtroGenero, filtroAnio]);
+  }, [libros, busqueda, autorActivo, generoActivo, anioActivo, filtroEstado]);
 
   const agregarLibro = (e: FormEvent) => {
     e.preventDefault();
-    if (!form.titulo || !form.autor || !form.genero || !form.anio) return;
+    const titulo = form.titulo.trim();
+    const autor = form.autor.trim();
+    const genero = form.genero.trim();
+    const anio = form.anio.trim();
+
+    if (!titulo || !autor || !genero || !anio) return;
+
+    const nuevoFormulario: Omit<Book, 'id'> = {
+      titulo,
+      autor,
+      genero,
+      anio,
+      estado: form.estado,
+    };
 
     if (libroEditandoId) {
       setLibros((prev) =>
         prev.map((libro) =>
-          libro.id === libroEditandoId ? { ...libro, ...form } : libro
+          libro.id === libroEditandoId ? { ...libro, ...nuevoFormulario } : libro
         )
       );
       setLibroEditandoId(null);
     } else {
-      const nuevoLibro: Libro = {
-        id: crypto.randomUUID(),
-        ...form,
+      const nuevoLibro: Book = {
+        id: generarId(),
+        ...nuevoFormulario,
       };
 
       setLibros([nuevoLibro, ...libros]);
@@ -199,20 +288,25 @@ function App() {
   };
 
   const eliminarLibro = (id: string) => {
-    const confirmar = window.confirm('¿Deseas eliminar este libro?');
+    const confirmar = window.confirm(
+      '¿Estás seguro de eliminar este libro? Esta acción no se puede deshacer.'
+    );
     if (!confirmar) return;
     setLibros((prev) => prev.filter((libro) => libro.id !== id));
   };
 
-  const autores = Array.from(new Set(libros.map((l) => l.autor)));
-  const generos = Array.from(new Set(libros.map((l) => l.genero)));
-  const anios = Array.from(new Set(libros.map((l) => l.anio)));
-
-  const featuredBooks = libros.slice(0, 5).map((l) => ({ title: l.titulo, author: l.autor }));
+  const featuredBooks = useMemo(
+    () => libros.slice(0, 5).map((l) => ({ title: l.titulo, author: l.autor })),
+    [libros]
+  );
 
   return (
     <div className="min-h-screen flex flex-col bg-crema text-negro-suave">
-      <Header />
+      <Header
+        busqueda={busqueda}
+        onBusquedaChange={setBusqueda}
+        onLimpiarBusqueda={() => setBusqueda('')}
+      />
 
       <main className="flex-1 mx-auto max-w-6xl px-6 py-8">
         <div className="mb-8">
@@ -250,15 +344,29 @@ function App() {
                 onChange={(e) => setForm({ ...form, anio: e.target.value })}
               />
             </div>
-            <button className="mt-4 rounded bg-slate-900 px-4 py-2 font-medium text-white">
-              {libroEditandoId ? 'Actualizar libro' : 'Guardar libro'}
-            </button>
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <button className="rounded bg-slate-900 px-4 py-2 font-medium text-white">
+                {libroEditandoId ? 'Actualizar libro' : 'Guardar libro'}
+              </button>
+              {libroEditandoId && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLibroEditandoId(null);
+                    setForm({ titulo: '', autor: '', genero: '', anio: '', estado: 'Disponible' });
+                  }}
+                  className="rounded border border-slate-300 bg-white px-4 py-2 text-slate-700 transition hover:bg-slate-50"
+                >
+                  Cancelar
+                </button>
+              )}
+            </div>
           </form>
           <div className="rounded-2xl bg-white p-6 shadow">
             <h2 className="mb-4 text-xl font-semibold">Filtros</h2>
             <label className="block mb-2 text-sm">Autor</label>
             <select
-              value={filtroAutor}
+              value={autorActivo}
               onChange={(e) => setFiltroAutor(e.target.value)}
               className="w-full rounded border border-slate-300 px-3 py-2 mb-4"
             >
@@ -270,7 +378,7 @@ function App() {
 
             <label className="block mb-2 text-sm">Género</label>
             <select
-              value={filtroGenero}
+              value={generoActivo}
               onChange={(e) => setFiltroGenero(e.target.value)}
               className="w-full rounded border border-slate-300 px-3 py-2 mb-4"
             >
@@ -282,27 +390,58 @@ function App() {
 
             <label className="block mb-2 text-sm">Año</label>
             <select
-              value={filtroAnio}
+              value={anioActivo}
               onChange={(e) => setFiltroAnio(e.target.value)}
-              className="w-full rounded border border-slate-300 px-3 py-2"
+              className="w-full rounded border border-slate-300 px-3 py-2 mb-4"
             >
               <option value="">Todos</option>
               {anios.map((y) => (
                 <option key={y} value={y}>{y}</option>
               ))}
             </select>
+
+            <label className="block mb-2 text-sm">Disponibilidad</label>
+            <select
+              value={filtroEstado}
+              onChange={(e) => setFiltroEstado(e.target.value as 'Todos' | 'Disponible' | 'Prestado')}
+              className="w-full rounded border border-slate-300 px-3 py-2"
+            >
+              <option value="Todos">Todos</option>
+              <option value="Disponible">Disponibles</option>
+              <option value="Prestado">Prestados</option>
+            </select>
+            <button
+              type="button"
+              onClick={() => {
+                setFiltroAutor('');
+                setFiltroGenero('');
+                setFiltroAnio('');
+                setFiltroEstado('Todos');
+              }}
+              className="mt-4 rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+            >
+              Limpiar filtros
+            </button>
           </div>
         </section>
-        <section className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {librosFiltrados.map((libro) => (
-            <BookCard
-              key={libro.id}
-              libro={libro}
-              onEdit={editarLibro}
-              onDelete={eliminarLibro}
-              onToggle={cambiarEstado}
-            />
-          ))}
+        <section className="mt-8">
+          {librosFiltrados.length === 0 ? (
+            <div className="rounded-2xl bg-white p-6 text-center text-slate-600 shadow">
+              No se encontraron libros que coincidan con la búsqueda.
+            </div>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {librosFiltrados.map((libro) => (
+                <BookCard
+                  key={libro.id}
+                  libro={libro}
+                  onEdit={editarLibro}
+                  onDelete={eliminarLibro}
+                  onToggle={cambiarEstado}
+                />
+              ))}
+            </div>
+          )}
         </section>
       </main>
 
