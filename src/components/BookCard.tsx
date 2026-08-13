@@ -57,19 +57,22 @@ export default function BookCard({
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <button
             onClick={() => onToggle(libro.id)}
-            className="min-h-[44px] flex-1 rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+            className="min-h-[44px] flex-1 rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2"
+            aria-label={`Cambiar disponibilidad de ${libro.titulo}`}
           >
             {libro.estado === 'Disponible' ? 'Marcar como prestado' : 'Marcar como disponible'}
           </button>
           <button
             onClick={() => onEdit(libro)}
-            className="min-h-[44px] flex-1 rounded-2xl bg-[#B38B59] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#a67b4a]"
+            className="min-h-[44px] flex-1 rounded-2xl bg-[#B38B59] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#a67b4a] focus:outline-none focus:ring-2 focus:ring-[#B38B59] focus:ring-offset-2"
+            aria-label={`Editar el libro ${libro.titulo}`}
           >
             Editar
           </button>
           <button
             onClick={() => onDelete(libro.id)}
-            className="min-h-[44px] flex-1 rounded-2xl bg-rose-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-rose-500"
+            className="min-h-[44px] flex-1 rounded-2xl bg-rose-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-400 focus:ring-offset-2"
+            aria-label={`Eliminar el libro ${libro.titulo}`}
           >
             Eliminar
           </button>
