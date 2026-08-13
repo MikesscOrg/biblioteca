@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { Route, Routes } from 'react-router-dom';
 import BookCard from './components/BookCard';
 import BookFilters from './components/BookFilters';
 import BookForm from './components/BookForm';
@@ -9,6 +10,7 @@ import EmptyState from './components/EmptyState';
 import type { Book } from './models/Book';
 import { sampleBooks } from './data/sampleBooks';
 import { crearFormularioDesdeLibro, crearFormularioVacio, filtrarLibros } from './utils/bookUtils';
+import AboutPage from './pages/AboutPage';
 
 const STORAGE_KEY = 'biblioteca-libros';
 
@@ -230,68 +232,80 @@ function App() {
   }, [vacioCatalogo, hayBusqueda, hayFiltrosActivos, librosFiltrados.length]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-crema text-negro-suave">
-      <Header
-        busqueda={busqueda}
-        onBusquedaChange={setBusqueda}
-        onLimpiarBusqueda={() => setBusqueda('')}
-      />
-
-      <main className="mx-auto flex-1 w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-        <div className="mb-8">
-          <Carousel items={featuredBooks} />
-        </div>
-
-        <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]" aria-label="Formulario y filtros de libros">
-          <BookForm
-            form={form}
-            libroEditandoId={libroEditandoId}
-            onSubmit={agregarLibro}
-            onChange={actualizarCampo}
-            onCancel={cancelarEdicion}
-          />
-          <BookFilters
-            autores={autores}
-            generos={generos}
-            anios={anios}
-            autorActivo={autorActivo}
-            generoActivo={generoActivo}
-            anioActivo={anioActivo}
-            filtroEstado={filtroEstado}
-            onAutorChange={setFiltroAutor}
-            onGeneroChange={setFiltroGenero}
-            onAnioChange={setFiltroAnio}
-            onEstadoChange={setFiltroEstado}
-            onLimpiar={limpiarFiltros}
-          />
-        </section>
-
-        <section className="mt-8" aria-label="Catálogo de libros">
-          {estadoListado ? (
-            <EmptyState
-              title={estadoListado.title}
-              description={estadoListado.description}
-              actionLabel={estadoListado.actionLabel}
-              onAction={estadoListado.onAction}
+    <Routes>
+      <Route
+        path="/"
+        element={
+          <div className="min-h-screen flex flex-col bg-crema text-negro-suave">
+            <Header
+              busqueda={busqueda}
+              onBusquedaChange={setBusqueda}
+              onLimpiarBusqueda={() => setBusqueda('')}
+              showSearch
             />
-          ) : (
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {librosFiltrados.map((libro) => (
-                <BookCard
-                  key={libro.id}
-                  libro={libro}
-                  onEdit={editarLibro}
-                  onDelete={eliminarLibro}
-                  onToggle={cambiarEstado}
-                />
-              ))}
-            </div>
-          )}
-        </section>
-      </main>
 
-      <Footer />
-    </div>
+            <main className="mx-auto flex-1 w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
+              <div className="mb-8">
+                <Carousel items={featuredBooks} />
+              </div>
+
+              <section
+                className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]"
+                aria-label="Formulario y filtros de libros"
+              >
+                <BookForm
+                  form={form}
+                  libroEditandoId={libroEditandoId}
+                  onSubmit={agregarLibro}
+                  onChange={actualizarCampo}
+                  onCancel={cancelarEdicion}
+                />
+                <BookFilters
+                  autores={autores}
+                  generos={generos}
+                  anios={anios}
+                  autorActivo={autorActivo}
+                  generoActivo={generoActivo}
+                  anioActivo={anioActivo}
+                  filtroEstado={filtroEstado}
+                  onAutorChange={setFiltroAutor}
+                  onGeneroChange={setFiltroGenero}
+                  onAnioChange={setFiltroAnio}
+                  onEstadoChange={setFiltroEstado}
+                  onLimpiar={limpiarFiltros}
+                />
+              </section>
+
+              <section className="mt-8" aria-label="Catálogo de libros">
+                {estadoListado ? (
+                  <EmptyState
+                    title={estadoListado.title}
+                    description={estadoListado.description}
+                    actionLabel={estadoListado.actionLabel}
+                    onAction={estadoListado.onAction}
+                  />
+                ) : (
+                  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                    {librosFiltrados.map((libro) => (
+                      <BookCard
+                        key={libro.id}
+                        libro={libro}
+                        onEdit={editarLibro}
+                        onDelete={eliminarLibro}
+                        onToggle={cambiarEstado}
+                      />
+                    ))}
+                  </div>
+                )}
+              </section>
+            </main>
+
+            <Footer />
+          </div>
+        }
+      />
+      <Route path="/acerca" element={<AboutPage />} />
+    </Routes>
   );
 }
 

@@ -66,7 +66,7 @@ function BookForm({ form, libroEditandoId, onSubmit, onChange, onCancel }: BookF
         </div>
       </div>
       <div className="mt-4 flex flex-wrap items-center gap-3">
-        <button className="rounded bg-slate-900 px-4 py-2 font-medium text-white">
+        <button type="submit" className="rounded bg-slate-900 px-4 py-2 font-medium text-white">
           {libroEditandoId ? 'Actualizar libro' : 'Guardar libro'}
         </button>
         {libroEditandoId && (
