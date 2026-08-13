@@ -274,11 +274,6 @@ function App() {
               actionLabel={estadoListado.actionLabel}
               onAction={estadoListado.onAction}
             />
-          ) : librosFiltrados.length === 0 ? (
-            <EmptyState
-              title="No hay libros para mostrar"
-              description="Intenta ajustar la búsqueda o los filtros para encontrar lo que buscas."
-            />
           ) : (
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {librosFiltrados.map((libro) => (
