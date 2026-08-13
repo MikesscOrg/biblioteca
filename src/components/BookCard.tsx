@@ -12,14 +12,14 @@ export default function BookCard({
   onToggle: (id: string) => void;
 }) {
   return (
-    <article className="group overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-lg">
+    <article className="group overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white p-4 shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-lg sm:p-5">
       <div className="flex flex-col gap-4 sm:gap-6">
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
             <p className="mb-2 inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-slate-600">
               Libro
             </p>
-            <h3 className="truncate text-xl font-semibold leading-7 text-slate-900">
+            <h3 className="break-words text-xl font-semibold leading-7 text-slate-900">
               {libro.titulo}
             </h3>
             <p className="mt-2 text-sm text-slate-600">
@@ -27,7 +27,7 @@ export default function BookCard({
             </p>
           </div>
 
-          <div className="flex flex-col items-end gap-2">
+          <div className="flex flex-col items-start gap-2 sm:items-end">
             <span
               className={`inline-flex rounded-full px-3 py-1 text-sm font-semibold ${
                 libro.estado === 'Disponible'

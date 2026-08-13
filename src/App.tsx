@@ -3,8 +3,10 @@ import Carousel from './components/Carousel';
 import BookCard from './components/BookCard';
 import Footer from './components/Footer';
 import Header from './components/Header';
+import EmptyState from './components/EmptyState';
 import type { Book } from './models/Book';
 import { sampleBooks } from './data/sampleBooks';
+import { validarLibro, type BookFormErrors } from './utils/validateBookForm';
 
 const STORAGE_KEY = 'biblioteca-libros';
 
@@ -63,6 +65,7 @@ function App() {
   const [filtroGenero, setFiltroGenero] = useState('');
   const [filtroAnio, setFiltroAnio] = useState('');
   const [filtroEstado, setFiltroEstado] = useState<'Todos' | 'Disponible' | 'Prestado'>('Todos');
+  const [errores, setErrores] = useState<BookFormErrors>({});
 
   useEffect(() => {
     if (typeof window === 'undefined' || !window.localStorage) return;
@@ -124,12 +127,17 @@ function App() {
 
   const agregarLibro = (e: FormEvent) => {
     e.preventDefault();
+    const erroresDelFormulario = validarLibro(form);
+    setErrores(erroresDelFormulario);
+
+    if (Object.keys(erroresDelFormulario).length > 0) {
+      return;
+    }
+
     const titulo = form.titulo.trim();
     const autor = form.autor.trim();
     const genero = form.genero.trim();
     const anio = form.anio.trim();
-
-    if (!titulo || !autor || !genero || !anio) return;
 
     const nuevoFormulario: Omit<Book, 'id'> = {
       titulo,
@@ -152,14 +160,16 @@ function App() {
         ...nuevoFormulario,
       };
 
-      setLibros([nuevoLibro, ...libros]);
+      setLibros((prev) => [nuevoLibro, ...prev]);
     }
 
+    setErrores({});
     setForm({ titulo: '', autor: '', genero: '', anio: '', estado: 'Disponible' });
   };
 
   const editarLibro = (libro: Book) => {
     setLibroEditandoId(libro.id);
+    setErrores({});
     setForm({
       titulo: libro.titulo,
       autor: libro.autor,
@@ -195,6 +205,57 @@ function App() {
     [libros]
   );
 
+  const actualizarCampo = (campo: keyof typeof form, valor: string) => {
+    setForm((prev) => ({ ...prev, [campo]: valor }));
+    setErrores((prev) => ({ ...prev, [campo]: undefined }));
+  };
+
+  const vacioCatalogo = libros.length === 0;
+  const hayBusqueda = busqueda.trim().length > 0;
+  const hayFiltrosActivos = Boolean(autorActivo || generoActivo || anioActivo || filtroEstado !== 'Todos');
+
+  const estadoListado = useMemo(() => {
+    if (vacioCatalogo) {
+      return {
+        title: 'El catálogo aún está vacío',
+        description:
+          'Aún no hay libros registrados. Agrega el primero para empezar a construir tu colección.',
+        actionLabel: 'Agregar libro',
+        onAction: () => {
+          const formulario = document.querySelector('form');
+          formulario?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        },
+      };
+    }
+
+    if (hayBusqueda && librosFiltrados.length === 0) {
+      return {
+        title: 'No hay resultados para tu búsqueda',
+        description:
+          'Prueba con otro término o limpia la búsqueda para ver todos los libros disponibles.',
+        actionLabel: 'Limpiar búsqueda',
+        onAction: () => setBusqueda(''),
+      };
+    }
+
+    if (hayFiltrosActivos && librosFiltrados.length === 0) {
+      return {
+        title: 'No hay libros con esos filtros',
+        description:
+          'Cambia uno o más filtros para ver otros libros o limpia los filtros para volver al catálogo completo.',
+        actionLabel: 'Limpiar filtros',
+        onAction: () => {
+          setFiltroAutor('');
+          setFiltroGenero('');
+          setFiltroAnio('');
+          setFiltroEstado('Todos');
+        },
+      };
+    }
+
+    return null;
+  }, [vacioCatalogo, hayBusqueda, hayFiltrosActivos, librosFiltrados.length]);
+
   return (
     <div className="min-h-screen flex flex-col bg-crema text-negro-suave">
       <Header
@@ -203,13 +264,13 @@ function App() {
         onLimpiarBusqueda={() => setBusqueda('')}
       />
 
-      <main className="mx-auto flex-1 max-w-6xl px-6 py-8">
+      <main className="mx-auto flex-1 w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
         <div className="mb-8">
           <Carousel items={featuredBooks} />
         </div>
 
         <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]" aria-label="Formulario y filtros de libros">
-          <form onSubmit={agregarLibro} className="rounded-2xl bg-white p-6 shadow">
+          <form onSubmit={agregarLibro} className="rounded-2xl bg-white p-4 shadow sm:p-6">
             <h2 className="mb-4 text-xl font-semibold">
               {libroEditandoId ? 'Editar libro' : 'Agregar libro'}
             </h2>
@@ -220,11 +281,20 @@ function App() {
                 </label>
                 <input
                   id="titulo-libro"
-                  className="w-full rounded border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-slate-400"
+                  className={`w-full rounded border px-3 py-2 transition ${errores.titulo ? 'border-red-500 bg-red-50' : 'border-slate-300'} focus:outline-none focus:ring-2 focus:ring-slate-400`}
                   placeholder="Título"
                   value={form.titulo}
-                  onChange={(e) => setForm({ ...form, titulo: e.target.value })}
+                  onChange={(e) => actualizarCampo('titulo', e.target.value)}
+                  aria-invalid={Boolean(errores.titulo)}
+                  aria-describedby={errores.titulo ? 'error-titulo' : undefined}
                 />
+                <div className="mt-1 min-h-[1.25rem]">
+                  {errores.titulo && (
+                    <p id="error-titulo" className="text-sm text-red-600" role="alert">
+                      {errores.titulo}
+                    </p>
+                  )}
+                </div>
               </div>
               <div>
                 <label htmlFor="autor-libro" className="mb-2 block text-sm font-medium text-slate-700">
@@ -232,11 +302,20 @@ function App() {
                 </label>
                 <input
                   id="autor-libro"
-                  className="w-full rounded border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-slate-400"
+                  className={`w-full rounded border px-3 py-2 transition ${errores.autor ? 'border-red-500 bg-red-50' : 'border-slate-300'} focus:outline-none focus:ring-2 focus:ring-slate-400`}
                   placeholder="Autor"
                   value={form.autor}
-                  onChange={(e) => setForm({ ...form, autor: e.target.value })}
+                  onChange={(e) => actualizarCampo('autor', e.target.value)}
+                  aria-invalid={Boolean(errores.autor)}
+                  aria-describedby={errores.autor ? 'error-autor' : undefined}
                 />
+                <div className="mt-1 min-h-[1.25rem]">
+                  {errores.autor && (
+                    <p id="error-autor" className="text-sm text-red-600" role="alert">
+                      {errores.autor}
+                    </p>
+                  )}
+                </div>
               </div>
               <div>
                 <label htmlFor="genero-libro" className="mb-2 block text-sm font-medium text-slate-700">
@@ -244,11 +323,20 @@ function App() {
                 </label>
                 <input
                   id="genero-libro"
-                  className="w-full rounded border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-slate-400"
+                  className={`w-full rounded border px-3 py-2 transition ${errores.genero ? 'border-red-500 bg-red-50' : 'border-slate-300'} focus:outline-none focus:ring-2 focus:ring-slate-400`}
                   placeholder="Género"
                   value={form.genero}
-                  onChange={(e) => setForm({ ...form, genero: e.target.value })}
+                  onChange={(e) => actualizarCampo('genero', e.target.value)}
+                  aria-invalid={Boolean(errores.genero)}
+                  aria-describedby={errores.genero ? 'error-genero' : undefined}
                 />
+                <div className="mt-1 min-h-[1.25rem]">
+                  {errores.genero && (
+                    <p id="error-genero" className="text-sm text-red-600" role="alert">
+                      {errores.genero}
+                    </p>
+                  )}
+                </div>
               </div>
               <div>
                 <label htmlFor="anio-libro" className="mb-2 block text-sm font-medium text-slate-700">
@@ -256,11 +344,20 @@ function App() {
                 </label>
                 <input
                   id="anio-libro"
-                  className="w-full rounded border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-slate-400"
+                  className={`w-full rounded border px-3 py-2 transition ${errores.anio ? 'border-red-500 bg-red-50' : 'border-slate-300'} focus:outline-none focus:ring-2 focus:ring-slate-400`}
                   placeholder="Año"
                   value={form.anio}
-                  onChange={(e) => setForm({ ...form, anio: e.target.value })}
+                  onChange={(e) => actualizarCampo('anio', e.target.value)}
+                  aria-invalid={Boolean(errores.anio)}
+                  aria-describedby={errores.anio ? 'error-anio' : undefined}
                 />
+                <div className="mt-1 min-h-[1.25rem]">
+                  {errores.anio && (
+                    <p id="error-anio" className="text-sm text-red-600" role="alert">
+                      {errores.anio}
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
             <div className="mt-4 flex flex-wrap items-center gap-3">
@@ -272,6 +369,7 @@ function App() {
                   type="button"
                   onClick={() => {
                     setLibroEditandoId(null);
+                    setErrores({});
                     setForm({ titulo: '', autor: '', genero: '', anio: '', estado: 'Disponible' });
                   }}
                   className="min-h-[44px] rounded border border-slate-300 bg-white px-4 py-2 text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2"
@@ -281,7 +379,7 @@ function App() {
               )}
             </div>
           </form>
-          <div className="rounded-2xl bg-white p-6 shadow">
+          <div className="rounded-2xl bg-white p-4 shadow sm:p-6">
             <h2 className="mb-4 text-xl font-semibold">Filtros</h2>
             <label htmlFor="filtro-autor" className="mb-2 block text-sm font-medium text-slate-700">
               Autor
@@ -356,10 +454,18 @@ function App() {
           </div>
         </section>
         <section className="mt-8" aria-label="Catálogo de libros">
-          {librosFiltrados.length === 0 ? (
-            <div className="rounded-2xl bg-white p-6 text-center text-slate-600 shadow">
-              No se encontraron libros que coincidan con la búsqueda.
-            </div>
+          {estadoListado ? (
+            <EmptyState
+              title={estadoListado.title}
+              description={estadoListado.description}
+              actionLabel={estadoListado.actionLabel}
+              onAction={estadoListado.onAction}
+            />
+          ) : librosFiltrados.length === 0 ? (
+            <EmptyState
+              title="No hay libros para mostrar"
+              description="Intenta ajustar la búsqueda o los filtros para encontrar lo que buscas."
+            />
           ) : (
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {librosFiltrados.map((libro) => (
