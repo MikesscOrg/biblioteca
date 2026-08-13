@@ -66,6 +66,18 @@ npm run build
 
 El comando anterior genera una build lista para desplegar.
 
+## Despliegue en Vercel
+
+El proyecto está preparado para desplegarse en Vercel como una app estática de Vite.
+
+Pasos recomendados:
+
+1. Conecta el repositorio en Vercel.
+2. Usa el comando de build: `npm run build`.
+3. El output se servirá desde la carpeta `dist`.
+
+Una vez desplegado, el sitio quedará disponible a través de la URL pública que genere Vercel.
+
 ## Estructura general del proyecto
 
 ```text
