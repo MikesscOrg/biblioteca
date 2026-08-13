@@ -19,12 +19,6 @@ body {
   min-width: 320px;
 }
 
-input,
-select,
-button {
-  min-height: 44px;
-}
-
 @media (max-width: 640px) {
   .text-red-600 {
     font-size: 0.875rem;
@@ -86,4 +80,3 @@ textarea {
 }
 
 .menu-modal-backdrop { background: rgba(0,0,0,0.45); }
-

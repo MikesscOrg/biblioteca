@@ -31,8 +31,11 @@ function BookFilters({
   return (
     <div className="rounded-2xl bg-white p-6 shadow">
       <h2 className="mb-4 text-xl font-semibold">Filtros</h2>
-      <label className="mb-2 block text-sm">Autor</label>
+      <label htmlFor="filtro-autor" className="mb-2 block text-sm">
+        Autor
+      </label>
       <select
+        id="filtro-autor"
         value={autorActivo}
         onChange={(e) => onAutorChange(e.target.value)}
         className="mb-4 w-full rounded border border-slate-300 px-3 py-2"
@@ -43,8 +46,11 @@ function BookFilters({
         ))}
       </select>
 
-      <label className="mb-2 block text-sm">Género</label>
+      <label htmlFor="filtro-genero" className="mb-2 block text-sm">
+        Género
+      </label>
       <select
+        id="filtro-genero"
         value={generoActivo}
         onChange={(e) => onGeneroChange(e.target.value)}
         className="mb-4 w-full rounded border border-slate-300 px-3 py-2"
@@ -55,8 +61,11 @@ function BookFilters({
         ))}
       </select>
 
-      <label className="mb-2 block text-sm">Año</label>
+      <label htmlFor="filtro-anio" className="mb-2 block text-sm">
+        Año
+      </label>
       <select
+        id="filtro-anio"
         value={anioActivo}
         onChange={(e) => onAnioChange(e.target.value)}
         className="mb-4 w-full rounded border border-slate-300 px-3 py-2"
@@ -67,8 +76,11 @@ function BookFilters({
         ))}
       </select>
 
-      <label className="mb-2 block text-sm">Disponibilidad</label>
+      <label htmlFor="filtro-estado" className="mb-2 block text-sm">
+        Disponibilidad
+      </label>
       <select
+        id="filtro-estado"
         value={filtroEstado}
         onChange={(e) => onEstadoChange(e.target.value as 'Todos' | 'Disponible' | 'Prestado')}
         className="w-full rounded border border-slate-300 px-3 py-2"
