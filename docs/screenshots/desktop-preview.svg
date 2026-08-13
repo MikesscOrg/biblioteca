@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="900" viewBox="0 0 1400 900">
+  <rect width="1400" height="900" fill="#f7efe6"/>
+  <rect x="40" y="40" width="1320" height="820" rx="30" fill="#ffffff" stroke="#d8c7aa" stroke-width="4"/>
+  <rect x="70" y="70" width="1260" height="120" rx="24" fill="#4a2c2a"/>
+  <rect x="100" y="100" width="240" height="24" rx="12" fill="#f6d37a"/>
+  <rect x="100" y="140" width="360" height="16" rx="8" fill="#f6d37a" opacity="0.85"/>
+  <rect x="1040" y="95" width="240" height="52" rx="16" fill="#ffffff" opacity="0.16"/>
+  <rect x="80" y="230" width="420" height="300" rx="24" fill="#f8f4ee" stroke="#e3d8c3" stroke-width="3"/>
+  <rect x="530" y="230" width="780" height="300" rx="24" fill="#f8f4ee" stroke="#e3d8c3" stroke-width="3"/>
+  <rect x="80" y="560" width="1230" height="250" rx="24" fill="#fffdfb" stroke="#e3d8c3" stroke-width="3"/>
+  <rect x="120" y="270" width="220" height="18" rx="9" fill="#4a2c2a"/>
+  <rect x="120" y="310" width="180" height="14" rx="7" fill="#6b6b6b"/>
+  <rect x="120" y="350" width="320" height="14" rx="7" fill="#8b8b8b"/>
+  <rect x="560" y="270" width="220" height="18" rx="9" fill="#4a2c2a"/>
+  <rect x="560" y="310" width="180" height="14" rx="7" fill="#6b6b6b"/>
+  <rect x="560" y="350" width="680" height="14" rx="7" fill="#8b8b8b"/>
+  <text x="120" y="760" font-family="Segoe UI, Arial, sans-serif" font-size="36" fill="#4a2c2a">Vista escritorio</text>
+</svg>

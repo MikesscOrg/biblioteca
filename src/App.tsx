@@ -1,10 +1,16 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import Carousel from './components/Carousel';
+import { Route, Routes } from 'react-router-dom';
 import BookCard from './components/BookCard';
+import BookFilters from './components/BookFilters';
+import BookForm from './components/BookForm';
+import Carousel from './components/Carousel';
 import Footer from './components/Footer';
 import Header from './components/Header';
+import EmptyState from './components/EmptyState';
 import type { Book } from './models/Book';
 import { sampleBooks } from './data/sampleBooks';
+import { crearFormularioDesdeLibro, crearFormularioVacio, filtrarLibros } from './utils/bookUtils';
+import AboutPage from './pages/AboutPage';
 
 const STORAGE_KEY = 'biblioteca-libros';
 
@@ -51,13 +57,7 @@ const generarId = () => {
 function App() {
   const [libros, setLibros] = useState<Book[]>(cargarLibros);
   const [busqueda, setBusqueda] = useState('');
-  const [form, setForm] = useState<Omit<Book, 'id'>>({
-    titulo: '',
-    autor: '',
-    genero: '',
-    anio: '',
-    estado: 'Disponible',
-  });
+  const [form, setForm] = useState<Omit<Book, 'id'>>(crearFormularioVacio());
   const [libroEditandoId, setLibroEditandoId] = useState<string | null>(null);
   const [filtroAutor, setFiltroAutor] = useState('');
   const [filtroGenero, setFiltroGenero] = useState('');
@@ -91,8 +91,6 @@ function App() {
     [libros]
   );
 
-  // Si el último libro de un autor/género/año se elimina o se edita, el filtro
-  // seleccionado deja de existir en la lista: se ignora y se limpia el estado.
   const autorActivo = autores.includes(filtroAutor) ? filtroAutor : '';
   const generoActivo = generos.includes(filtroGenero) ? filtroGenero : '';
   const anioActivo = anios.includes(filtroAnio) ? filtroAnio : '';
@@ -103,24 +101,11 @@ function App() {
     if (filtroAnio !== anioActivo) setFiltroAnio(anioActivo);
   }, [filtroAutor, filtroGenero, filtroAnio, autorActivo, generoActivo, anioActivo]);
 
-  const librosFiltrados = useMemo(() => {
-    const texto = busqueda.toLowerCase();
-    return libros.filter((libro) => {
-      if (
-        texto &&
-        !(
-          libro.titulo.toLowerCase().includes(texto) ||
-          libro.autor.toLowerCase().includes(texto)
-        )
-      )
-        return false;
-      if (autorActivo && libro.autor !== autorActivo) return false;
-      if (generoActivo && libro.genero !== generoActivo) return false;
-      if (anioActivo && libro.anio !== anioActivo) return false;
-      if (filtroEstado !== 'Todos' && libro.estado !== filtroEstado) return false;
-      return true;
-    });
-  }, [libros, busqueda, autorActivo, generoActivo, anioActivo, filtroEstado]);
+  const librosFiltrados = useMemo(
+    () =>
+      filtrarLibros(libros, busqueda, autorActivo, generoActivo, anioActivo, filtroEstado),
+    [libros, busqueda, autorActivo, generoActivo, anioActivo, filtroEstado]
+  );
 
   const agregarLibro = (e: FormEvent) => {
     e.preventDefault();
@@ -152,21 +137,15 @@ function App() {
         ...nuevoFormulario,
       };
 
-      setLibros([nuevoLibro, ...libros]);
+      setLibros((prev) => [nuevoLibro, ...prev]);
     }
 
-    setForm({ titulo: '', autor: '', genero: '', anio: '', estado: 'Disponible' });
+    setForm(crearFormularioVacio());
   };
 
   const editarLibro = (libro: Book) => {
     setLibroEditandoId(libro.id);
-    setForm({
-      titulo: libro.titulo,
-      autor: libro.autor,
-      genero: libro.genero,
-      anio: libro.anio,
-      estado: libro.estado,
-    });
+    setForm(crearFormularioDesdeLibro(libro));
   };
 
   const cambiarEstado = (id: string) => {
@@ -195,153 +174,138 @@ function App() {
     [libros]
   );
 
+  const actualizarCampo = (campo: keyof Omit<Book, 'id'>, valor: string) => {
+    setForm((prev) => ({ ...prev, [campo]: valor }));
+  };
+
+  const limpiarFiltros = () => {
+    setFiltroAutor('');
+    setFiltroGenero('');
+    setFiltroAnio('');
+    setFiltroEstado('Todos');
+  };
+
+  const cancelarEdicion = () => {
+    setLibroEditandoId(null);
+    setForm(crearFormularioVacio());
+  };
+
+  const vacioCatalogo = libros.length === 0;
+  const hayBusqueda = busqueda.trim().length > 0;
+  const hayFiltrosActivos = Boolean(autorActivo || generoActivo || anioActivo || filtroEstado !== 'Todos');
+
+  const estadoListado = useMemo(() => {
+    if (vacioCatalogo) {
+      return {
+        title: 'El catálogo aún está vacío',
+        description:
+          'Aún no hay libros registrados. Agrega el primero para empezar a construir tu colección.',
+        actionLabel: 'Agregar libro',
+        onAction: () => {
+          const formulario = document.querySelector('form');
+          formulario?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        },
+      };
+    }
+
+    if (hayBusqueda && librosFiltrados.length === 0) {
+      return {
+        title: 'No hay resultados para tu búsqueda',
+        description:
+          'Prueba con otro término o limpia la búsqueda para ver todos los libros disponibles.',
+        actionLabel: 'Limpiar búsqueda',
+        onAction: () => setBusqueda(''),
+      };
+    }
+
+    if (hayFiltrosActivos && librosFiltrados.length === 0) {
+      return {
+        title: 'No hay libros con esos filtros',
+        description:
+          'Cambia uno o más filtros para ver otros libros o limpia los filtros para volver al catálogo completo.',
+        actionLabel: 'Limpiar filtros',
+        onAction: limpiarFiltros,
+      };
+    }
+
+    return null;
+  }, [vacioCatalogo, hayBusqueda, hayFiltrosActivos, librosFiltrados.length]);
+
   return (
-    <div className="min-h-screen flex flex-col bg-crema text-negro-suave">
-      <Header
-        busqueda={busqueda}
-        onBusquedaChange={setBusqueda}
-        onLimpiarBusqueda={() => setBusqueda('')}
-      />
+    <Routes>
+      <Route
+        path="/"
+        element={
+          <div className="min-h-screen flex flex-col bg-crema text-negro-suave">
+            <Header
+              busqueda={busqueda}
+              onBusquedaChange={setBusqueda}
+              onLimpiarBusqueda={() => setBusqueda('')}
+              showSearch
+            />
 
-      <main className="flex-1 mx-auto max-w-6xl px-6 py-8">
-        <div className="mb-8">
-          <Carousel items={featuredBooks} />
-        </div>
+            <main className="mx-auto flex-1 w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
+              <div className="mb-8">
+                <Carousel items={featuredBooks} />
+              </div>
 
-        <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-          <form onSubmit={agregarLibro} className="rounded-2xl bg-white p-6 shadow">
-            <h2 className="mb-4 text-xl font-semibold">
-              {libroEditandoId ? 'Editar libro' : 'Agregar libro'}
-            </h2>
-            <div className="grid gap-4 md:grid-cols-2">
-              <input
-                className="rounded border border-slate-300 px-3 py-2"
-                placeholder="Título"
-                value={form.titulo}
-                onChange={(e) => setForm({ ...form, titulo: e.target.value })}
-              />
-              <input
-                className="rounded border border-slate-300 px-3 py-2"
-                placeholder="Autor"
-                value={form.autor}
-                onChange={(e) => setForm({ ...form, autor: e.target.value })}
-              />
-              <input
-                className="rounded border border-slate-300 px-3 py-2"
-                placeholder="Género"
-                value={form.genero}
-                onChange={(e) => setForm({ ...form, genero: e.target.value })}
-              />
-              <input
-                className="rounded border border-slate-300 px-3 py-2"
-                placeholder="Año"
-                value={form.anio}
-                onChange={(e) => setForm({ ...form, anio: e.target.value })}
-              />
-            </div>
-            <div className="mt-4 flex flex-wrap items-center gap-3">
-              <button className="rounded bg-slate-900 px-4 py-2 font-medium text-white">
-                {libroEditandoId ? 'Actualizar libro' : 'Guardar libro'}
-              </button>
-              {libroEditandoId && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setLibroEditandoId(null);
-                    setForm({ titulo: '', autor: '', genero: '', anio: '', estado: 'Disponible' });
-                  }}
-                  className="rounded border border-slate-300 bg-white px-4 py-2 text-slate-700 transition hover:bg-slate-50"
-                >
-                  Cancelar
-                </button>
-              )}
-            </div>
-          </form>
-          <div className="rounded-2xl bg-white p-6 shadow">
-            <h2 className="mb-4 text-xl font-semibold">Filtros</h2>
-            <label className="block mb-2 text-sm">Autor</label>
-            <select
-              value={autorActivo}
-              onChange={(e) => setFiltroAutor(e.target.value)}
-              className="w-full rounded border border-slate-300 px-3 py-2 mb-4"
-            >
-              <option value="">Todos</option>
-              {autores.map((a) => (
-                <option key={a} value={a}>{a}</option>
-              ))}
-            </select>
-
-            <label className="block mb-2 text-sm">Género</label>
-            <select
-              value={generoActivo}
-              onChange={(e) => setFiltroGenero(e.target.value)}
-              className="w-full rounded border border-slate-300 px-3 py-2 mb-4"
-            >
-              <option value="">Todos</option>
-              {generos.map((g) => (
-                <option key={g} value={g}>{g}</option>
-              ))}
-            </select>
-
-            <label className="block mb-2 text-sm">Año</label>
-            <select
-              value={anioActivo}
-              onChange={(e) => setFiltroAnio(e.target.value)}
-              className="w-full rounded border border-slate-300 px-3 py-2 mb-4"
-            >
-              <option value="">Todos</option>
-              {anios.map((y) => (
-                <option key={y} value={y}>{y}</option>
-              ))}
-            </select>
-
-            <label className="block mb-2 text-sm">Disponibilidad</label>
-            <select
-              value={filtroEstado}
-              onChange={(e) => setFiltroEstado(e.target.value as 'Todos' | 'Disponible' | 'Prestado')}
-              className="w-full rounded border border-slate-300 px-3 py-2"
-            >
-              <option value="Todos">Todos</option>
-              <option value="Disponible">Disponibles</option>
-              <option value="Prestado">Prestados</option>
-            </select>
-            <button
-              type="button"
-              onClick={() => {
-                setFiltroAutor('');
-                setFiltroGenero('');
-                setFiltroAnio('');
-                setFiltroEstado('Todos');
-              }}
-              className="mt-4 rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
-            >
-              Limpiar filtros
-            </button>
-          </div>
-        </section>
-        <section className="mt-8">
-          {librosFiltrados.length === 0 ? (
-            <div className="rounded-2xl bg-white p-6 text-center text-slate-600 shadow">
-              No se encontraron libros que coincidan con la búsqueda.
-            </div>
-          ) : (
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {librosFiltrados.map((libro) => (
-                <BookCard
-                  key={libro.id}
-                  libro={libro}
-                  onEdit={editarLibro}
-                  onDelete={eliminarLibro}
-                  onToggle={cambiarEstado}
+              <section
+                className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]"
+                aria-label="Formulario y filtros de libros"
+              >
+                <BookForm
+                  form={form}
+                  libroEditandoId={libroEditandoId}
+                  onSubmit={agregarLibro}
+                  onChange={actualizarCampo}
+                  onCancel={cancelarEdicion}
                 />
-              ))}
-            </div>
-          )}
-        </section>
-      </main>
+                <BookFilters
+                  autores={autores}
+                  generos={generos}
+                  anios={anios}
+                  autorActivo={autorActivo}
+                  generoActivo={generoActivo}
+                  anioActivo={anioActivo}
+                  filtroEstado={filtroEstado}
+                  onAutorChange={setFiltroAutor}
+                  onGeneroChange={setFiltroGenero}
+                  onAnioChange={setFiltroAnio}
+                  onEstadoChange={setFiltroEstado}
+                  onLimpiar={limpiarFiltros}
+                />
+              </section>
 
-      <Footer />
-    </div>
+              <section className="mt-8" aria-label="Catálogo de libros">
+                {estadoListado ? (
+                  <EmptyState
+                    title={estadoListado.title}
+                    description={estadoListado.description}
+                    actionLabel={estadoListado.actionLabel}
+                    onAction={estadoListado.onAction}
+                  />
+                ) : (
+                  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                    {librosFiltrados.map((libro) => (
+                      <BookCard
+                        key={libro.id}
+                        libro={libro}
+                        onEdit={editarLibro}
+                        onDelete={eliminarLibro}
+                        onToggle={cambiarEstado}
+                      />
+                    ))}
+                  </div>
+                )}
+              </section>
+            </main>
+
+            <Footer />
+          </div>
+        }
+      />
+      <Route path="/acerca" element={<AboutPage />} />
+    </Routes>
   );
 }
 
