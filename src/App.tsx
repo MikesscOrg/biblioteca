@@ -6,6 +6,7 @@ import Header from './components/Header';
 import EmptyState from './components/EmptyState';
 import type { Book } from './models/Book';
 import { sampleBooks } from './data/sampleBooks';
+import { validarLibro, type BookFormErrors } from './utils/validateBookForm';
 
 const STORAGE_KEY = 'biblioteca-libros';
 
@@ -64,6 +65,7 @@ function App() {
   const [filtroGenero, setFiltroGenero] = useState('');
   const [filtroAnio, setFiltroAnio] = useState('');
   const [filtroEstado, setFiltroEstado] = useState<'Todos' | 'Disponible' | 'Prestado'>('Todos');
+  const [errores, setErrores] = useState<BookFormErrors>({});
 
   useEffect(() => {
     if (typeof window === 'undefined' || !window.localStorage) return;
@@ -125,12 +127,17 @@ function App() {
 
   const agregarLibro = (e: FormEvent) => {
     e.preventDefault();
+    const erroresDelFormulario = validarLibro(form);
+    setErrores(erroresDelFormulario);
+
+    if (Object.keys(erroresDelFormulario).length > 0) {
+      return;
+    }
+
     const titulo = form.titulo.trim();
     const autor = form.autor.trim();
     const genero = form.genero.trim();
     const anio = form.anio.trim();
-
-    if (!titulo || !autor || !genero || !anio) return;
 
     const nuevoFormulario: Omit<Book, 'id'> = {
       titulo,
@@ -153,14 +160,16 @@ function App() {
         ...nuevoFormulario,
       };
 
-      setLibros([nuevoLibro, ...libros]);
+      setLibros((prev) => [nuevoLibro, ...prev]);
     }
 
+    setErrores({});
     setForm({ titulo: '', autor: '', genero: '', anio: '', estado: 'Disponible' });
   };
 
   const editarLibro = (libro: Book) => {
     setLibroEditandoId(libro.id);
+    setErrores({});
     setForm({
       titulo: libro.titulo,
       autor: libro.autor,
@@ -195,6 +204,11 @@ function App() {
     () => libros.slice(0, 5).map((l) => ({ title: l.titulo, author: l.autor })),
     [libros]
   );
+
+  const actualizarCampo = (campo: keyof typeof form, valor: string) => {
+    setForm((prev) => ({ ...prev, [campo]: valor }));
+    setErrores((prev) => ({ ...prev, [campo]: undefined }));
+  };
 
   const vacioCatalogo = libros.length === 0;
   const hayBusqueda = busqueda.trim().length > 0;
@@ -261,30 +275,74 @@ function App() {
               {libroEditandoId ? 'Editar libro' : 'Agregar libro'}
             </h2>
             <div className="grid gap-4 md:grid-cols-2">
-              <input
-                className="rounded border border-slate-300 px-3 py-2"
-                placeholder="Título"
-                value={form.titulo}
-                onChange={(e) => setForm({ ...form, titulo: e.target.value })}
-              />
-              <input
-                className="rounded border border-slate-300 px-3 py-2"
-                placeholder="Autor"
-                value={form.autor}
-                onChange={(e) => setForm({ ...form, autor: e.target.value })}
-              />
-              <input
-                className="rounded border border-slate-300 px-3 py-2"
-                placeholder="Género"
-                value={form.genero}
-                onChange={(e) => setForm({ ...form, genero: e.target.value })}
-              />
-              <input
-                className="rounded border border-slate-300 px-3 py-2"
-                placeholder="Año"
-                value={form.anio}
-                onChange={(e) => setForm({ ...form, anio: e.target.value })}
-              />
+              <div className="md:col-span-2">
+                <input
+                  className={`w-full rounded border px-3 py-2 transition ${errores.titulo ? 'border-red-500 bg-red-50' : 'border-slate-300'}`}
+                  placeholder="Título"
+                  value={form.titulo}
+                  onChange={(e) => actualizarCampo('titulo', e.target.value)}
+                  aria-invalid={Boolean(errores.titulo)}
+                  aria-describedby={errores.titulo ? 'error-titulo' : undefined}
+                />
+                <div className="mt-1 min-h-[1.25rem]">
+                  {errores.titulo && (
+                    <p id="error-titulo" className="text-sm text-red-600" role="alert">
+                      {errores.titulo}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div>
+                <input
+                  className={`w-full rounded border px-3 py-2 transition ${errores.autor ? 'border-red-500 bg-red-50' : 'border-slate-300'}`}
+                  placeholder="Autor"
+                  value={form.autor}
+                  onChange={(e) => actualizarCampo('autor', e.target.value)}
+                  aria-invalid={Boolean(errores.autor)}
+                  aria-describedby={errores.autor ? 'error-autor' : undefined}
+                />
+                <div className="mt-1 min-h-[1.25rem]">
+                  {errores.autor && (
+                    <p id="error-autor" className="text-sm text-red-600" role="alert">
+                      {errores.autor}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div>
+                <input
+                  className={`w-full rounded border px-3 py-2 transition ${errores.genero ? 'border-red-500 bg-red-50' : 'border-slate-300'}`}
+                  placeholder="Género"
+                  value={form.genero}
+                  onChange={(e) => actualizarCampo('genero', e.target.value)}
+                  aria-invalid={Boolean(errores.genero)}
+                  aria-describedby={errores.genero ? 'error-genero' : undefined}
+                />
+                <div className="mt-1 min-h-[1.25rem]">
+                  {errores.genero && (
+                    <p id="error-genero" className="text-sm text-red-600" role="alert">
+                      {errores.genero}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div>
+                <input
+                  className={`w-full rounded border px-3 py-2 transition ${errores.anio ? 'border-red-500 bg-red-50' : 'border-slate-300'}`}
+                  placeholder="Año"
+                  value={form.anio}
+                  onChange={(e) => actualizarCampo('anio', e.target.value)}
+                  aria-invalid={Boolean(errores.anio)}
+                  aria-describedby={errores.anio ? 'error-anio' : undefined}
+                />
+                <div className="mt-1 min-h-[1.25rem]">
+                  {errores.anio && (
+                    <p id="error-anio" className="text-sm text-red-600" role="alert">
+                      {errores.anio}
+                    </p>
+                  )}
+                </div>
+              </div>
             </div>
             <div className="mt-4 flex flex-wrap items-center gap-3">
               <button className="rounded bg-slate-900 px-4 py-2 font-medium text-white">
@@ -295,6 +353,7 @@ function App() {
                   type="button"
                   onClick={() => {
                     setLibroEditandoId(null);
+                    setErrores({});
                     setForm({ titulo: '', autor: '', genero: '', anio: '', estado: 'Disponible' });
                   }}
                   className="rounded border border-slate-300 bg-white px-4 py-2 text-slate-700 transition hover:bg-slate-50"
