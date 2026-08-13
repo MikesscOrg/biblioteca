@@ -264,13 +264,13 @@ function App() {
         onLimpiarBusqueda={() => setBusqueda('')}
       />
 
-      <main className="flex-1 mx-auto max-w-6xl px-6 py-8">
+      <main className="mx-auto flex-1 w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
         <div className="mb-8">
           <Carousel items={featuredBooks} />
         </div>
 
         <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-          <form onSubmit={agregarLibro} className="rounded-2xl bg-white p-6 shadow">
+          <form onSubmit={agregarLibro} className="rounded-2xl bg-white p-4 shadow sm:p-6">
             <h2 className="mb-4 text-xl font-semibold">
               {libroEditandoId ? 'Editar libro' : 'Agregar libro'}
             </h2>
@@ -363,7 +363,7 @@ function App() {
               )}
             </div>
           </form>
-          <div className="rounded-2xl bg-white p-6 shadow">
+          <div className="rounded-2xl bg-white p-4 shadow sm:p-6">
             <h2 className="mb-4 text-xl font-semibold">Filtros</h2>
             <label className="block mb-2 text-sm">Autor</label>
             <select
