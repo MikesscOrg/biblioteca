@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { Dispatch, ReactNode, SetStateAction } from 'react';
 import Footer from './Footer';
 import Header from './Header';
 
@@ -6,7 +6,7 @@ type LayoutProps = {
   children: ReactNode;
   showSearch?: boolean;
   busqueda?: string;
-  onBusquedaChange?: (value: string) => void;
+  onBusquedaChange?: Dispatch<SetStateAction<string>>;
   onLimpiarBusqueda?: () => void;
 };
 
