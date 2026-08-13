@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import Carousel from './components/Carousel';
 import BookCard from './components/BookCard';
+import BookFilters from './components/BookFilters';
+import BookForm from './components/BookForm';
+import Carousel from './components/Carousel';
 import Footer from './components/Footer';
 import Header from './components/Header';
 import EmptyState from './components/EmptyState';
 import type { Book } from './models/Book';
 import { sampleBooks } from './data/sampleBooks';
-import { validarLibro, type BookFormErrors } from './utils/validateBookForm';
+import { crearFormularioDesdeLibro, crearFormularioVacio, filtrarLibros } from './utils/bookUtils';
 
 const STORAGE_KEY = 'biblioteca-libros';
 
@@ -53,19 +55,12 @@ const generarId = () => {
 function App() {
   const [libros, setLibros] = useState<Book[]>(cargarLibros);
   const [busqueda, setBusqueda] = useState('');
-  const [form, setForm] = useState<Omit<Book, 'id'>>({
-    titulo: '',
-    autor: '',
-    genero: '',
-    anio: '',
-    estado: 'Disponible',
-  });
+  const [form, setForm] = useState<Omit<Book, 'id'>>(crearFormularioVacio());
   const [libroEditandoId, setLibroEditandoId] = useState<string | null>(null);
   const [filtroAutor, setFiltroAutor] = useState('');
   const [filtroGenero, setFiltroGenero] = useState('');
   const [filtroAnio, setFiltroAnio] = useState('');
   const [filtroEstado, setFiltroEstado] = useState<'Todos' | 'Disponible' | 'Prestado'>('Todos');
-  const [errores, setErrores] = useState<BookFormErrors>({});
 
   useEffect(() => {
     if (typeof window === 'undefined' || !window.localStorage) return;
@@ -94,8 +89,6 @@ function App() {
     [libros]
   );
 
-  // Si el último libro de un autor/género/año se elimina o se edita, el filtro
-  // seleccionado deja de existir en la lista: se ignora y se limpia el estado.
   const autorActivo = autores.includes(filtroAutor) ? filtroAutor : '';
   const generoActivo = generos.includes(filtroGenero) ? filtroGenero : '';
   const anioActivo = anios.includes(filtroAnio) ? filtroAnio : '';
@@ -106,38 +99,20 @@ function App() {
     if (filtroAnio !== anioActivo) setFiltroAnio(anioActivo);
   }, [filtroAutor, filtroGenero, filtroAnio, autorActivo, generoActivo, anioActivo]);
 
-  const librosFiltrados = useMemo(() => {
-    const texto = busqueda.toLowerCase();
-    return libros.filter((libro) => {
-      if (
-        texto &&
-        !(
-          libro.titulo.toLowerCase().includes(texto) ||
-          libro.autor.toLowerCase().includes(texto)
-        )
-      )
-        return false;
-      if (autorActivo && libro.autor !== autorActivo) return false;
-      if (generoActivo && libro.genero !== generoActivo) return false;
-      if (anioActivo && libro.anio !== anioActivo) return false;
-      if (filtroEstado !== 'Todos' && libro.estado !== filtroEstado) return false;
-      return true;
-    });
-  }, [libros, busqueda, autorActivo, generoActivo, anioActivo, filtroEstado]);
+  const librosFiltrados = useMemo(
+    () =>
+      filtrarLibros(libros, busqueda, autorActivo, generoActivo, anioActivo, filtroEstado),
+    [libros, busqueda, autorActivo, generoActivo, anioActivo, filtroEstado]
+  );
 
   const agregarLibro = (e: FormEvent) => {
     e.preventDefault();
-    const erroresDelFormulario = validarLibro(form);
-    setErrores(erroresDelFormulario);
-
-    if (Object.keys(erroresDelFormulario).length > 0) {
-      return;
-    }
-
     const titulo = form.titulo.trim();
     const autor = form.autor.trim();
     const genero = form.genero.trim();
     const anio = form.anio.trim();
+
+    if (!titulo || !autor || !genero || !anio) return;
 
     const nuevoFormulario: Omit<Book, 'id'> = {
       titulo,
@@ -163,20 +138,12 @@ function App() {
       setLibros((prev) => [nuevoLibro, ...prev]);
     }
 
-    setErrores({});
-    setForm({ titulo: '', autor: '', genero: '', anio: '', estado: 'Disponible' });
+    setForm(crearFormularioVacio());
   };
 
   const editarLibro = (libro: Book) => {
     setLibroEditandoId(libro.id);
-    setErrores({});
-    setForm({
-      titulo: libro.titulo,
-      autor: libro.autor,
-      genero: libro.genero,
-      anio: libro.anio,
-      estado: libro.estado,
-    });
+    setForm(crearFormularioDesdeLibro(libro));
   };
 
   const cambiarEstado = (id: string) => {
@@ -205,9 +172,20 @@ function App() {
     [libros]
   );
 
-  const actualizarCampo = (campo: keyof typeof form, valor: string) => {
+  const actualizarCampo = (campo: keyof Omit<Book, 'id'>, valor: string) => {
     setForm((prev) => ({ ...prev, [campo]: valor }));
-    setErrores((prev) => ({ ...prev, [campo]: undefined }));
+  };
+
+  const limpiarFiltros = () => {
+    setFiltroAutor('');
+    setFiltroGenero('');
+    setFiltroAnio('');
+    setFiltroEstado('Todos');
+  };
+
+  const cancelarEdicion = () => {
+    setLibroEditandoId(null);
+    setForm(crearFormularioVacio());
   };
 
   const vacioCatalogo = libros.length === 0;
@@ -244,12 +222,7 @@ function App() {
         description:
           'Cambia uno o más filtros para ver otros libros o limpia los filtros para volver al catálogo completo.',
         actionLabel: 'Limpiar filtros',
-        onAction: () => {
-          setFiltroAutor('');
-          setFiltroGenero('');
-          setFiltroAnio('');
-          setFiltroEstado('Todos');
-        },
+        onAction: limpiarFiltros,
       };
     }
 
@@ -270,189 +243,29 @@ function App() {
         </div>
 
         <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]" aria-label="Formulario y filtros de libros">
-          <form onSubmit={agregarLibro} className="rounded-2xl bg-white p-4 shadow sm:p-6">
-            <h2 className="mb-4 text-xl font-semibold">
-              {libroEditandoId ? 'Editar libro' : 'Agregar libro'}
-            </h2>
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="md:col-span-2">
-                <label htmlFor="titulo-libro" className="mb-2 block text-sm font-medium text-slate-700">
-                  Título
-                </label>
-                <input
-                  id="titulo-libro"
-                  className={`w-full rounded border px-3 py-2 transition ${errores.titulo ? 'border-red-500 bg-red-50' : 'border-slate-300'} focus:outline-none focus:ring-2 focus:ring-slate-400`}
-                  placeholder="Título"
-                  value={form.titulo}
-                  onChange={(e) => actualizarCampo('titulo', e.target.value)}
-                  aria-invalid={Boolean(errores.titulo)}
-                  aria-describedby={errores.titulo ? 'error-titulo' : undefined}
-                />
-                <div className="mt-1 min-h-[1.25rem]">
-                  {errores.titulo && (
-                    <p id="error-titulo" className="text-sm text-red-600" role="alert">
-                      {errores.titulo}
-                    </p>
-                  )}
-                </div>
-              </div>
-              <div>
-                <label htmlFor="autor-libro" className="mb-2 block text-sm font-medium text-slate-700">
-                  Autor
-                </label>
-                <input
-                  id="autor-libro"
-                  className={`w-full rounded border px-3 py-2 transition ${errores.autor ? 'border-red-500 bg-red-50' : 'border-slate-300'} focus:outline-none focus:ring-2 focus:ring-slate-400`}
-                  placeholder="Autor"
-                  value={form.autor}
-                  onChange={(e) => actualizarCampo('autor', e.target.value)}
-                  aria-invalid={Boolean(errores.autor)}
-                  aria-describedby={errores.autor ? 'error-autor' : undefined}
-                />
-                <div className="mt-1 min-h-[1.25rem]">
-                  {errores.autor && (
-                    <p id="error-autor" className="text-sm text-red-600" role="alert">
-                      {errores.autor}
-                    </p>
-                  )}
-                </div>
-              </div>
-              <div>
-                <label htmlFor="genero-libro" className="mb-2 block text-sm font-medium text-slate-700">
-                  Género
-                </label>
-                <input
-                  id="genero-libro"
-                  className={`w-full rounded border px-3 py-2 transition ${errores.genero ? 'border-red-500 bg-red-50' : 'border-slate-300'} focus:outline-none focus:ring-2 focus:ring-slate-400`}
-                  placeholder="Género"
-                  value={form.genero}
-                  onChange={(e) => actualizarCampo('genero', e.target.value)}
-                  aria-invalid={Boolean(errores.genero)}
-                  aria-describedby={errores.genero ? 'error-genero' : undefined}
-                />
-                <div className="mt-1 min-h-[1.25rem]">
-                  {errores.genero && (
-                    <p id="error-genero" className="text-sm text-red-600" role="alert">
-                      {errores.genero}
-                    </p>
-                  )}
-                </div>
-              </div>
-              <div>
-                <label htmlFor="anio-libro" className="mb-2 block text-sm font-medium text-slate-700">
-                  Año
-                </label>
-                <input
-                  id="anio-libro"
-                  className={`w-full rounded border px-3 py-2 transition ${errores.anio ? 'border-red-500 bg-red-50' : 'border-slate-300'} focus:outline-none focus:ring-2 focus:ring-slate-400`}
-                  placeholder="Año"
-                  value={form.anio}
-                  onChange={(e) => actualizarCampo('anio', e.target.value)}
-                  aria-invalid={Boolean(errores.anio)}
-                  aria-describedby={errores.anio ? 'error-anio' : undefined}
-                />
-                <div className="mt-1 min-h-[1.25rem]">
-                  {errores.anio && (
-                    <p id="error-anio" className="text-sm text-red-600" role="alert">
-                      {errores.anio}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-            <div className="mt-4 flex flex-wrap items-center gap-3">
-              <button className="min-h-[44px] rounded bg-slate-900 px-4 py-2 font-medium text-white focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2">
-                {libroEditandoId ? 'Actualizar libro' : 'Guardar libro'}
-              </button>
-              {libroEditandoId && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setLibroEditandoId(null);
-                    setErrores({});
-                    setForm({ titulo: '', autor: '', genero: '', anio: '', estado: 'Disponible' });
-                  }}
-                  className="min-h-[44px] rounded border border-slate-300 bg-white px-4 py-2 text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2"
-                >
-                  Cancelar
-                </button>
-              )}
-            </div>
-          </form>
-          <div className="rounded-2xl bg-white p-4 shadow sm:p-6">
-            <h2 className="mb-4 text-xl font-semibold">Filtros</h2>
-            <label htmlFor="filtro-autor" className="mb-2 block text-sm font-medium text-slate-700">
-              Autor
-            </label>
-            <select
-              id="filtro-autor"
-              value={autorActivo}
-              onChange={(e) => setFiltroAutor(e.target.value)}
-              className="mb-4 w-full min-h-[44px] rounded border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-slate-400"
-            >
-              <option value="">Todos</option>
-              {autores.map((a) => (
-                <option key={a} value={a}>{a}</option>
-              ))}
-            </select>
-
-            <label htmlFor="filtro-genero" className="mb-2 block text-sm font-medium text-slate-700">
-              Género
-            </label>
-            <select
-              id="filtro-genero"
-              value={generoActivo}
-              onChange={(e) => setFiltroGenero(e.target.value)}
-              className="mb-4 w-full min-h-[44px] rounded border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-slate-400"
-            >
-              <option value="">Todos</option>
-              {generos.map((g) => (
-                <option key={g} value={g}>{g}</option>
-              ))}
-            </select>
-
-            <label htmlFor="filtro-anio" className="mb-2 block text-sm font-medium text-slate-700">
-              Año
-            </label>
-            <select
-              id="filtro-anio"
-              value={anioActivo}
-              onChange={(e) => setFiltroAnio(e.target.value)}
-              className="mb-4 w-full min-h-[44px] rounded border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-slate-400"
-            >
-              <option value="">Todos</option>
-              {anios.map((y) => (
-                <option key={y} value={y}>{y}</option>
-              ))}
-            </select>
-
-            <label htmlFor="filtro-disponibilidad" className="mb-2 block text-sm font-medium text-slate-700">
-              Disponibilidad
-            </label>
-            <select
-              id="filtro-disponibilidad"
-              value={filtroEstado}
-              onChange={(e) => setFiltroEstado(e.target.value as 'Todos' | 'Disponible' | 'Prestado')}
-              className="w-full min-h-[44px] rounded border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-slate-400"
-            >
-              <option value="Todos">Todos</option>
-              <option value="Disponible">Disponibles</option>
-              <option value="Prestado">Prestados</option>
-            </select>
-            <button
-              type="button"
-              onClick={() => {
-                setFiltroAutor('');
-                setFiltroGenero('');
-                setFiltroAnio('');
-                setFiltroEstado('Todos');
-              }}
-              className="mt-4 min-h-[44px] rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2"
-            >
-              Limpiar filtros
-            </button>
-          </div>
+          <BookForm
+            form={form}
+            libroEditandoId={libroEditandoId}
+            onSubmit={agregarLibro}
+            onChange={actualizarCampo}
+            onCancel={cancelarEdicion}
+          />
+          <BookFilters
+            autores={autores}
+            generos={generos}
+            anios={anios}
+            autorActivo={autorActivo}
+            generoActivo={generoActivo}
+            anioActivo={anioActivo}
+            filtroEstado={filtroEstado}
+            onAutorChange={setFiltroAutor}
+            onGeneroChange={setFiltroGenero}
+            onAnioChange={setFiltroAnio}
+            onEstadoChange={setFiltroEstado}
+            onLimpiar={limpiarFiltros}
+          />
         </section>
+
         <section className="mt-8" aria-label="Catálogo de libros">
           {estadoListado ? (
             <EmptyState
@@ -460,11 +273,6 @@ function App() {
               description={estadoListado.description}
               actionLabel={estadoListado.actionLabel}
               onAction={estadoListado.onAction}
-            />
-          ) : librosFiltrados.length === 0 ? (
-            <EmptyState
-              title="No hay libros para mostrar"
-              description="Intenta ajustar la búsqueda o los filtros para encontrar lo que buscas."
             />
           ) : (
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
