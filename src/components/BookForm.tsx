@@ -1,5 +1,4 @@
 import type { FormEvent } from 'react';
-import type { Book } from '../models/Book';
 import type { BookFormValues } from '../utils/bookUtils';
 
 type BookFormProps = {

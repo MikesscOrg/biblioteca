@@ -19,8 +19,33 @@ body {
   min-width: 320px;
 }
 
+input,
+select,
+button {
+  min-height: 44px;
+}
+
+@media (max-width: 640px) {
+  .text-red-600 {
+    font-size: 0.875rem;
+    line-height: 1.4;
+  }
+}
+
 * {
   box-sizing: border-box;
+}
+
+:focus-visible {
+  outline: 3px solid #1f2937;
+  outline-offset: 2px;
+}
+
+button,
+input,
+select,
+textarea {
+  min-height: 44px;
 }
 
 /* Fuente elegante para el nombre del sitio */

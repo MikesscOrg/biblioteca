@@ -5,6 +5,7 @@ import BookForm from './components/BookForm';
 import Carousel from './components/Carousel';
 import Footer from './components/Footer';
 import Header from './components/Header';
+import EmptyState from './components/EmptyState';
 import type { Book } from './models/Book';
 import { sampleBooks } from './data/sampleBooks';
 import { crearFormularioDesdeLibro, crearFormularioVacio, filtrarLibros } from './utils/bookUtils';
@@ -88,8 +89,6 @@ function App() {
     [libros]
   );
 
-  // Si el último libro de un autor/género/año se elimina o se edita, el filtro
-  // seleccionado deja de existir en la lista: se ignora y se limpia el estado.
   const autorActivo = autores.includes(filtroAutor) ? filtroAutor : '';
   const generoActivo = generos.includes(filtroGenero) ? filtroGenero : '';
   const anioActivo = anios.includes(filtroAnio) ? filtroAnio : '';
@@ -136,7 +135,7 @@ function App() {
         ...nuevoFormulario,
       };
 
-      setLibros([nuevoLibro, ...libros]);
+      setLibros((prev) => [nuevoLibro, ...prev]);
     }
 
     setForm(crearFormularioVacio());
@@ -189,6 +188,47 @@ function App() {
     setForm(crearFormularioVacio());
   };
 
+  const vacioCatalogo = libros.length === 0;
+  const hayBusqueda = busqueda.trim().length > 0;
+  const hayFiltrosActivos = Boolean(autorActivo || generoActivo || anioActivo || filtroEstado !== 'Todos');
+
+  const estadoListado = useMemo(() => {
+    if (vacioCatalogo) {
+      return {
+        title: 'El catálogo aún está vacío',
+        description:
+          'Aún no hay libros registrados. Agrega el primero para empezar a construir tu colección.',
+        actionLabel: 'Agregar libro',
+        onAction: () => {
+          const formulario = document.querySelector('form');
+          formulario?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        },
+      };
+    }
+
+    if (hayBusqueda && librosFiltrados.length === 0) {
+      return {
+        title: 'No hay resultados para tu búsqueda',
+        description:
+          'Prueba con otro término o limpia la búsqueda para ver todos los libros disponibles.',
+        actionLabel: 'Limpiar búsqueda',
+        onAction: () => setBusqueda(''),
+      };
+    }
+
+    if (hayFiltrosActivos && librosFiltrados.length === 0) {
+      return {
+        title: 'No hay libros con esos filtros',
+        description:
+          'Cambia uno o más filtros para ver otros libros o limpia los filtros para volver al catálogo completo.',
+        actionLabel: 'Limpiar filtros',
+        onAction: limpiarFiltros,
+      };
+    }
+
+    return null;
+  }, [vacioCatalogo, hayBusqueda, hayFiltrosActivos, librosFiltrados.length]);
+
   return (
     <div className="min-h-screen flex flex-col bg-crema text-negro-suave">
       <Header
@@ -197,12 +237,12 @@ function App() {
         onLimpiarBusqueda={() => setBusqueda('')}
       />
 
-      <main className="flex-1 mx-auto max-w-6xl px-6 py-8">
+      <main className="mx-auto flex-1 w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
         <div className="mb-8">
           <Carousel items={featuredBooks} />
         </div>
 
-        <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+        <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]" aria-label="Formulario y filtros de libros">
           <BookForm
             form={form}
             libroEditandoId={libroEditandoId}
@@ -225,11 +265,20 @@ function App() {
             onLimpiar={limpiarFiltros}
           />
         </section>
-        <section className="mt-8">
-          {librosFiltrados.length === 0 ? (
-            <div className="rounded-2xl bg-white p-6 text-center text-slate-600 shadow">
-              No se encontraron libros que coincidan con la búsqueda.
-            </div>
+
+        <section className="mt-8" aria-label="Catálogo de libros">
+          {estadoListado ? (
+            <EmptyState
+              title={estadoListado.title}
+              description={estadoListado.description}
+              actionLabel={estadoListado.actionLabel}
+              onAction={estadoListado.onAction}
+            />
+          ) : librosFiltrados.length === 0 ? (
+            <EmptyState
+              title="No hay libros para mostrar"
+              description="Intenta ajustar la búsqueda o los filtros para encontrar lo que buscas."
+            />
           ) : (
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {librosFiltrados.map((libro) => (

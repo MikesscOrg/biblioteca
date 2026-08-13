@@ -1,4 +1,3 @@
-import type { Book } from '../models/Book';
 
 type BookFiltersProps = {
   autores: string[];
